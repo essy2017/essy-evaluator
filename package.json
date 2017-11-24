@@ -1,7 +1,7 @@
 {
-  "name": "essy-expression",
+  "name": "essy-evaluator",
   "version": "1.0.0",
-  "description": "Parses and evaluates mathematical expressions.",
+  "description": "Parses and evaluates mathematical expressions from Javascript strings.",
   "main": "dist/bundle.js",
   "scripts": {
     "build": "rollup -c rollup.config.js && rollup -c rollup.config.min.js",
@@ -16,5 +16,12 @@
     "mocha": "^4.0.1",
     "rollup": "^0.51.8",
     "rollup-plugin-uglify": "^2.0.1"
-  }
+  },
+  "keywords": [
+    "eval",
+    "evaluation",
+    "expression",
+    "math",
+    "parse"
+  ]
 }
