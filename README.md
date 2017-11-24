@@ -123,7 +123,49 @@ The `evaluate()` method will throw an `EvaluateException` in the following cases
   - Division by zero.
   - Invalid arguments provided to function (e.g., sqrt(-2)).
 
-### defineName (id {String}, value {Any})
+### defineFunction (name {String}, ev {Function} [, noArgs {Boolean}])
+Defines a custom function. The `name` is the name for the function and `ev` is 
+the function body. The `noArgs` flag should be set to true if the function does 
+not accept any arguments; by default this value is false.
+
+    var essy      = require('essy-evaluator');
+    var parser    = new essy.Parser();
+    var evaluator = new essy.Evaluator();
+    var tokens    = parser.parse('addTwoNumbers(2, 3)');
+    
+    evaluator.defineFunction('addTwoNumbers', function () {
+      return this.argValue(0) + this.argValue(1);
+    });
+    
+    console.log(evaluator.evaluate(tokens)); // 5
+
+As seen above, the provided `ev` function has access to provided argument values 
+via the `argValue()` method, which accepts an argument index. In the above, 
+`argValue(0) === 2` and `argValue(1) === 3`.
+
+You can also define functions that accept an arbitrary number of arguments:
+
+    var essy      = require('essy-evaluator');
+    var parser    = new essy.Parser();
+    var evaluator = new essy.Evaluator();
+    var tokens    = parser.parse('addNumbers(1,2,3,4)');
+    
+    evaluator.defineFunction('addNumbers', function () {
+      
+      var sum    = 0,
+          values = this.argValues();
+      
+      for (var i = 0; i < values.length; i++) {
+        sum += values[i];
+      }
+      
+      return values;
+    });
+
+The above makes use of the `argValues()` method, which evaluates and returns all 
+argument values.
+
+### defineName (name {String}, value {Any})
 Defines a custom name. This can be useful if you want to define custom constant 
 values or include variables in your expressions.
 
@@ -135,3 +177,5 @@ values or include variables in your expressions.
     evaluator.defineName('myCustomName', 4);
     
     console.log(evaluator.evaluate(tokens)); // 7
+
+Note that `defineName()` will overwrite any existing definition without warning.
