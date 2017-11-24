@@ -187,8 +187,38 @@ Note that `defineName()` will overwrite any existing definition without warning.
 #### Pre-defined Functions
 `Evaluator` defines a number of functions by default:
 
-Function             | Description
-:------------------- | :----------
-abs(x)               | Returns absolute value of x.
-acos(x)              | Returns arccosine of x.
-and(x0, x1, ... xN]) | Returns 1 if all arguments are greater than 0, else returns 0.
+Function                | Description
+:---------------------  | :----------
+abs(x)                  | Returns absolute value of x.
+acos(x)                 | Returns arccosine of x. Throws exception if x is not in range [-1, 1].
+and(x0, x1, ... xN])    | Returns 1 if all arguments are greater than 0, else returns 0.
+asin(x)                 | Returns arcsine of x. Throws exception if x is not in range [0, 1].
+atan(x)                 | Returns arctangent of x. Throws exception if x is not in range [-1, 1].
+ceiling(x)              | Returns x rounded up to nearest integer.
+choose(x, y0, ... yN)   | Returns the argument at index x. x = 1 will return y0.
+cos(x)                  | Returns cosine of x.
+exp(x)                  | Returns e raised to x.
+floor(x)                | Returns x rounded down to nearest integer.
+if(x, y, z)             | Returns y if x is greater than 0, else returns z.
+log(x)                  | Returns the base-10 logarithm of x. Throws exception if x is less than or equal to 0.
+ln(x)                   | Returns the natural logarithm of x. Throws exception if x is less than or equal to 0.
+max(x0, x1, ... xN)     | Returns the argument with the maximum value.
+mean(x0, x1, ... xN)    | Returns the mean of the provided arguments.
+median(x0, x1, ... xN)  | Returns the median of the provided arguments.
+min(x0, x1, ... xN)     | Returns the argument with the minimum value.
+mod(x, y)               | Returns x modulo y. Throws exception if y equals 0.
+not(x)                  | Returns 0 if x is greater than 0, else returns 1.
+or(x0, x1, ... xN)      | Returns 1 if any argument is greater than 0, else returns 0.
+pow(x, y)               | Returns x raised to y.
+product(x0, x1, ... xN) | Returns the product of all arguments.
+quotient(x, y)          | Returns integer portion of x / y. Throws exception if y equals 0.
+rand()                  | Returns a random number in the range [0, 1].
+randInt(x, y)           | Returns a random integer in the range [x, y].
+randRange(x, y)         | Returns a random number in the range [x, y].
+round(x)                | Returns x rounded to the nearest integer.
+sin(x)                  | Returns the sine of x.
+sqrt(x)                 | Returns the square root of x. Throws exception if x is less than or equal to 0.
+sum(x0, x1, ... xN)     | Returns the sum of provided arguments.
+tan(x)                  | Returns the tangent of x.
+
+ 
