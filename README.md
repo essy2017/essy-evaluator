@@ -12,3 +12,14 @@ Installation
 -------------------------------------
 
     npm install essy-evaluator
+
+Basic Usage
+-------------------------------------
+
+    var essy      = require('essy-evaluator');
+    var parser    = new essy.Parser();
+    var evaluator = new essy.Evaluator();
+    var tokens    = parser.parse('2 * 3');
+    
+    console.log(evaluator.evaluate(tokens)); // 6
+    
