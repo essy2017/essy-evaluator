@@ -200,14 +200,14 @@ function createSymbolTable () {
  * @return {Object} Modified o1.
  */
 function extend (o1, o2) {
-	if (o2) {
-		for (var p in o2) {
-			if (o2.hasOwnProperty(p)) {
-				o1[p] = o2[p];
-			}
-		}
-	}
-	return o1;
+  if (o2) {
+  	for (var p in o2) {
+  		if (o2.hasOwnProperty(p)) {
+  			o1[p] = o2[p];
+  		}
+  	}
+  }
+  return o1;
 }
 
 /**
@@ -219,22 +219,22 @@ function extend (o1, o2) {
  */
 function Symbol (id, props) {
 
-	var o = Object.create({
-		id: id,
-		lbp: 0,
-		nud: function () {
-			return this;
-		},
-		led: function (/*left*/) {
-			return this;
-		},
-		ev: function () {
-			return 0;
-		}
+  var o = Object.create({
+  	id: id,
+  	lbp: 0,
+  	nud: function () {
+  		return this;
+  	},
+  	led: function (/*left*/) {
+  		return this;
+  	},
+  	ev: function () {
+  		return 0;
+  	}
 
-	});
+  });
 
-	return extend(o, props);
+  return extend(o, props);
 }
 
 /**
