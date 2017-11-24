@@ -8,6 +8,10 @@ expressions. The module can be used to replace some functionality provided by
 Javascript's `eval` but also allows for custom operator and function definitions
 to enable a custom pseudo programming language.
 
+The module was created during development of 
+[Essy Tree](https://essytree.com), online decision tree 
+analysis software.
+
 Installation
 -------------------------------------
 
@@ -30,7 +34,7 @@ Documentation
 The Parser class provides a method `parse()` to parse an expression. There is a
 default set of recognized operators that can be customized.
 
-### Parser ([config {Object}])
+#### Parser ([config {Object}])
 Constructs a new `Parser` instance. Accepts an optional configuration object that can
 be used to disable default operators or add new operators. For example, the following 
 disables the default "+" operator and adds two custom operators, "#" and "$".
@@ -71,7 +75,7 @@ By default the following operators are defined:
   - '&&'
   - '||'
 
-### parse (expression {String})
+#### parse (expression {String})
 Parses an expression into tokens. `parse()` returns an array of simple token objects, 
 each with properties `type {String}` and `value {Any}`. The token type can be one of the 
 following:  
@@ -89,7 +93,7 @@ following:
   - Unrecognized operator 
   - Unterminated string 
   
-### updateOperators (operators {Object})
+#### updateOperators (operators {Object})
 Updates valid operator list. Keys should be the operator (e.g., '+') and values indicate 
 whether the operator is valid. Values can be "truthy" or "falsey".
 
@@ -103,3 +107,11 @@ whether the operator is valid. Values can be "truthy" or "falsey".
       '$': true,
       '#': 1
     });
+
+
+### Evaluator ###
+The Evaluator class provides methods to evaluate an array of tokens returned from 
+`Parser.parse()` as well as define custom operators, functions, and names.
+
+#### evaluate (tokens {Object[]})
+Evaluates array of tokens returned from `Parser.parse()`. 2
