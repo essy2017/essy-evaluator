@@ -38,26 +38,26 @@ function advance (id) {
     return m_activeSymbol;
   }
 
-	t = m_tokenSet[m_tokenIndex];
-	m_tokenIndex += 1;
+  t = m_tokenSet[m_tokenIndex];
+  m_tokenIndex += 1;
 
-	if (typeof t === 'number') {
-		o = m_symbolTable[LITERAL_TOKEN_ID];
-		m_activeSymbol = Object.create(o);
-		m_activeSymbol.value = t;
-	}
-	else {
-		o = m_symbolTable[t];
-		if (!o) {
-			throw new EvaluateException(
+  if (typeof t === 'number') {
+    o = m_symbolTable[LITERAL_TOKEN_ID];
+    m_activeSymbol = Object.create(o);
+    m_activeSymbol.value = t;
+  }
+  else {
+    o = m_symbolTable[t];
+    if (!o) {
+      throw new EvaluateException(
         EvaluateException.TYPE_UNDEFINED_SYMBOL,
-				'The symbol "' + t + '" is not defined.'
-			);
-		}
-		m_activeSymbol = Object.create(o);
-	}
+        'The symbol "' + t + '" is not defined.'
+      );
+    }
+    m_activeSymbol = Object.create(o);
+  }
 
-	return m_activeSymbol;
+  return m_activeSymbol;
 }
 
 /**
@@ -68,21 +68,18 @@ function advance (id) {
  */
 function expression (rbp) {
 
-	var s = m_activeSymbol, left;
-	advance();
-	left = s.nud();
+  var s = m_activeSymbol, left;
+  advance();
+  left = s.nud();
 
-	while (rbp < m_activeSymbol.lbp) {
-		s = m_activeSymbol;
-		advance();
-		left = s.led(left);
-	}
+  while (rbp < m_activeSymbol.lbp) {
+    s = m_activeSymbol;
+    advance();
+    left = s.led(left);
+  }
 
-	return left;
-
+  return left;
 }
-
-
 
 /**
  * Adds a symbol to collection.
@@ -90,7 +87,7 @@ function expression (rbp) {
  * @param symbol {Object}
  */
 function addSymbol (symbol) {
-	m_symbolTable[symbol.id] = symbol;
+  m_symbolTable[symbol.id] = symbol;
 }
 
 /**
@@ -100,7 +97,7 @@ function addSymbol (symbol) {
  * @param value {Number} Symbol value.
  */
 function addConstantSymbol (id, value) {
-	addSymbol(ConstantSymbol(id, value));
+  addSymbol(ConstantSymbol(id, value));
 }
 
 /**
@@ -109,7 +106,7 @@ function addConstantSymbol (id, value) {
  * @param id {String} Symbol identifier.
  */
 function addSimpleSymbol (id) {
-	addSymbol(Symbol(id));
+  addSymbol(Symbol(id));
 }
 
 /**
@@ -119,78 +116,78 @@ function addSimpleSymbol (id) {
 function createSymbolTable () {
 
   addSimpleSymbol(':');
-	addSimpleSymbol(',');
-	addSimpleSymbol(')');
-	addSimpleSymbol(']');
-	addSimpleSymbol('}');
+  addSimpleSymbol(',');
+  addSimpleSymbol(')');
+  addSimpleSymbol(']');
+  addSimpleSymbol('}');
   addSimpleSymbol(END_TOKEN_ID);
-	addConstantSymbol(LITERAL_TOKEN_ID, 0);
+  addConstantSymbol(LITERAL_TOKEN_ID, 0);
 
   // Constants.
   addConstantSymbol('FALSE', 0);
   addConstantSymbol('TRUE', 1);
   addConstantSymbol('E', Math.E);
-	addConstantSymbol('LN2', Math.log(2));
-	addConstantSymbol('LN10', Math.log(10));
-	addConstantSymbol('PI', Math.PI);
-	addConstantSymbol('SQRT1_2', 1 / Math.sqrt(2));
-	addConstantSymbol('SQRT2', Math.sqrt(2));
+  addConstantSymbol('LN2', Math.log(2));
+  addConstantSymbol('LN10', Math.log(10));
+  addConstantSymbol('PI', Math.PI);
+  addConstantSymbol('SQRT1_2', 1 / Math.sqrt(2));
+  addConstantSymbol('SQRT2', Math.sqrt(2));
 
   // Prefix operators.
-	addSymbol(PrefixNot());
-	addSymbol(PrefixParen());
-	addSymbol(PrefixBracket());
-	addSymbol(PrefixBrace());
+  addSymbol(PrefixNot());
+  addSymbol(PrefixParen());
+  addSymbol(PrefixBracket());
+  addSymbol(PrefixBrace());
 
   // Infix operators.
-	addSymbol(InfixAdd());
-	addSymbol(InfixSubtract());
-	addSymbol(InfixMultiply());
-	addSymbol(InfixDivide());
-	addSymbol(InfixPow());
-	addSymbol(InfixEqual());
-	addSymbol(InfixNotEqual());
-	addSymbol(InfixLessThan());
-	addSymbol(InfixLessThanOrEqual());
-	addSymbol(InfixGreaterThan());
-	addSymbol(InfixGreaterThanOrEqual());
-	addSymbol(InfixTernary());
-	addSymbol(InfixAnd());
-	addSymbol(InfixOr());
+  addSymbol(InfixAdd());
+  addSymbol(InfixSubtract());
+  addSymbol(InfixMultiply());
+  addSymbol(InfixDivide());
+  addSymbol(InfixPow());
+  addSymbol(InfixEqual());
+  addSymbol(InfixNotEqual());
+  addSymbol(InfixLessThan());
+  addSymbol(InfixLessThanOrEqual());
+  addSymbol(InfixGreaterThan());
+  addSymbol(InfixGreaterThanOrEqual());
+  addSymbol(InfixTernary());
+  addSymbol(InfixAnd());
+  addSymbol(InfixOr());
 
   // Functions (single argument).
-	addSymbol(FuncAbs('abs'));
-	addSymbol(FuncAcos('acos'));
-	addSymbol(FuncAsin('asin'));
-	addSymbol(FuncAtan('atan'));
-	addSymbol(FuncCeiling('ceiling'));
-	addSymbol(FuncCos('cos'));
-	addSymbol(FuncExp('exp'));
-	addSymbol(FuncFloor('floor'));
-	addSymbol(FuncLog('log'));
-	addSymbol(FuncLn('ln'));
-	addSymbol(FuncNot('not'));
-	addSymbol(FuncRand('rand'));
-	addSymbol(FuncRound('round'));
-	addSymbol(FuncSin('sin'));
-	addSymbol(FuncSqrt('sqrt'));
-	addSymbol(FuncTan('tan'));
+  addSymbol(FuncAbs('abs'));
+  addSymbol(FuncAcos('acos'));
+  addSymbol(FuncAsin('asin'));
+  addSymbol(FuncAtan('atan'));
+  addSymbol(FuncCeiling('ceiling'));
+  addSymbol(FuncCos('cos'));
+  addSymbol(FuncExp('exp'));
+  addSymbol(FuncFloor('floor'));
+  addSymbol(FuncLog('log'));
+  addSymbol(FuncLn('ln'));
+  addSymbol(FuncNot('not'));
+  addSymbol(FuncRand('rand'));
+  addSymbol(FuncRound('round'));
+  addSymbol(FuncSin('sin'));
+  addSymbol(FuncSqrt('sqrt'));
+  addSymbol(FuncTan('tan'));
 
   // Functions (multiple arguments).
   addSymbol(FuncAnd('and'));
-	addSymbol(FuncChoose('choose'));
-	addSymbol(FuncIf('if'));
-	addSymbol(FuncMax('max'));
-	addSymbol(FuncMean('mean'));
-	addSymbol(FuncMin('min'));
-	addSymbol(FuncModulo('mod'));
-	addSymbol(FuncOr('or'));
-	addSymbol(FuncPow('pow'));
-	addSymbol(FuncProduct('product'));
-	addSymbol(FuncQuotient('quotient'));
-	addSymbol(FuncRandInt('randInt'));
-	addSymbol(FuncRandRange('randRange'));
-	addSymbol(FuncSum('sum'));
+  addSymbol(FuncChoose('choose'));
+  addSymbol(FuncIf('if'));
+  addSymbol(FuncMax('max'));
+  addSymbol(FuncMean('mean'));
+  addSymbol(FuncMin('min'));
+  addSymbol(FuncModulo('mod'));
+  addSymbol(FuncOr('or'));
+  addSymbol(FuncPow('pow'));
+  addSymbol(FuncProduct('product'));
+  addSymbol(FuncQuotient('quotient'));
+  addSymbol(FuncRandInt('randInt'));
+  addSymbol(FuncRandRange('randRange'));
+  addSymbol(FuncSum('sum'));
 }
 
 
