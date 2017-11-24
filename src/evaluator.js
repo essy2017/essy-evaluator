@@ -1,284 +1,498 @@
 import { EvaluateException } from './evaluate-exception';
 
-var m_symbolTable = {};
-var m_activeSymbol;
-var m_tokenSet;
-var m_tokenIndex = 0;
-var END_TOKEN_ID = '(end)';
-var LITERAL_TOKEN_ID = '(literal)';
+var END_TOKEN_ID     = '(end)',
+    LITERAL_TOKEN_ID = '(literal)';
+
 
 /**
- * Makes a new Symbol instance from the next simple token in the tokenSet collection and
- * assigns it to the static activeSymbol property.
- * @method advance
- * @param id {String} [optional] Provide to set a limit on right bounds of expression. Eg, for function would advance to "," in loop and then to ")".
- * @return {Symbol} The next symbol in the expression.
- * @static
- * @private
+ * Simple single-depth extend utility function.
+ * @method extend
+ * @param o1 {Object} Source object.
+ * @param o2 {Object} [optional] Object with mix-in properties.
+ * @return {Object} Modified o1.
  */
-function advance (id) {
-
-  var o, t;
-
-  if (id && m_activeSymbol && m_activeSymbol.id !== id) {
-    throw new EvaluateException(
-      EvaluateException.TYPE_BAD_TOKEN,
-      'Expected token with id "' + id + '".'
-    );
+function extend (o1, o2) {
+  if (o2) {
+    for (var p in o2) {
+      if (o2.hasOwnProperty(p)) {
+        o1[p] = o2[p];
+      }
+    }
   }
+  return o1;
+}
 
-  // Last token so return.
-  if (m_tokenIndex >= m_tokenSet.length) {
-    m_activeSymbol = m_symbolTable[END_TOKEN_ID];
-    return m_activeSymbol;
-  }
+/**
+ * Creates symbol template.
+ * @method Symbol
+ * @param id {String} Symbol id.
+ * @param lbp {Number} [optional] Left binding power.
+ * @return {Object} New object.
+ */
+function Symbol (id, props) {
 
-  t = m_tokenSet[m_tokenIndex];
-  m_tokenIndex += 1;
+  var o = Object.create({
+    id: id,
+    lbp: 0,
+    nud: function () {
+      return this;
+    },
+    led: function (/*left*/) {
+      return this;
+    },
+    ev: function () {
+      return 0;
+    }
+  });
 
-  if (typeof t === 'number') {
-    o = m_symbolTable[LITERAL_TOKEN_ID];
-    m_activeSymbol = Object.create(o);
-    m_activeSymbol.value = t;
-  }
-  else {
-    o = m_symbolTable[t];
-    if (!o) {
+  return extend(o, props);
+}
+
+export function Evaluator () {
+  this.symbolTable = {};
+  this.tokenIndex = 0;
+  this.tokenSet = null;
+  this.activeSymbol = null;
+
+  this.defineSymbols();
+}
+
+Evaluator.prototype = {
+
+  advance: function (id) {
+
+    var o, t;
+
+    if (id && this.activeSymbol && this.activeSymbol.id !== id) {
       throw new EvaluateException(
-        EvaluateException.TYPE_UNDEFINED_SYMBOL,
-        'The symbol "' + t + '" is not defined.'
+        EvaluateException.TYPE_BAD_TOKEN,
+        'Expected token with id "' + id + '".'
       );
     }
-    m_activeSymbol = Object.create(o);
-  }
 
-  return m_activeSymbol;
-}
-
-/**
- * Evaluates an expression.
- * @method expression
- * @param rbp {Number} Right binding power of calling symbol.
- * @return {Symbol} The resulting symbol.
- * @static
- * @private
- */
-function expression (rbp) {
-
-  var s = m_activeSymbol, left;
-  advance();
-  left = s.nud();
-
-  while (rbp < m_activeSymbol.lbp) {
-    s = m_activeSymbol;
-    advance();
-    left = s.led(left);
-  }
-
-  return left;
-}
-
-
-
-/*******************************************************************************
- *
- * Default symbol definitions.
- *
- ******************************************************************************/
-
-/**
- * Populates symbol table with all pre-defined symbols.
- * @method createSymbolTable
- * @static
- * @private
- */
-function createSymbolTable () {
-
-  // Define simple symbols.
-  [':', ',', ')', ']', '}', END_TOKEN_ID].forEach(function (id) {
-    defineSymbol(id);
-  });
-
-  // Define constants.
-  defineNames({
-    'FALSE'   : 0,
-    'TRUE'    : 1,
-    'E'       : Math.E,
-    'LN2'     : Math.log(2),
-    'LN10'    : Math.log(10),
-    'PI'      : Math.PI,
-    'SQRT1_2' : 1 / Math.sqrt(2),
-    'SQRT2'   : Math.sqrt(2)
-  });
-  defineName(LITERAL_TOKEN_ID, 0);
-
-
-  // Define prefix operators.
-  definePrefixOperators({
-
-    '!': {
-      ev: function () {
-        return this.first.ev() > 0 ? 0 : 1;
-      }
-    },
-
-    '(': {
-      nud: function () {
-        var s = expression(0);
-        advance(')');
-        return s;
-      }
-    },
-
-    '[': {
-      nud: function () {
-       var s = expression(0);
-       advance(']');
-       return s;
-      }
-    },
-
-    '{': {
-      nud: function () {
-        var s = expression(0);
-        advance('}');
-        return s;
-      }
+    // Last token so return.
+    if (this.tokenIndex >= this.tokenSet.length) {
+      this.activeSymbol = this.symbolTable[END_TOKEN_ID];
+      return this.activeSymbol;
     }
 
-  });
+    t = this.tokenSet[this.tokenIndex];
+    this.tokenIndex += 1;
 
-  // Define infix operators.
-  defineInfixOperators({
-
-    '+': {
-      lbp: 50,
-      ev: function () {
-        return this.firstValue() + this.secondValue();
+    if (typeof t === 'number') {
+      o = this.symbolTable[LITERAL_TOKEN_ID];
+      this.activeSymbol = Object.create(o);
+      this.activeSymbol.value = t;
+    }
+    else {
+      o = this.symbolTable[t];
+      if (!o) {
+        throw new EvaluateException(
+          EvaluateException.TYPE_UNDEFINED_SYMBOL,
+          'The symbol "' + t + '" is not defined.'
+        );
       }
-    },
+      this.activeSymbol = Object.create(o);
+    }
 
-    '-': {
-      lbp: 50,
-      // For case of prefix operator.
+    return this.activeSymbol;
+  },
+
+  evaluate: function (tokenObjs) {
+    var tokens = [];
+    for (var i = 0; i < tokenObjs.length; i++) {
+      tokens.push(tokenObjs[i].value);
+    }
+
+    this.tokenSet = tokens;
+    this.tokenIndex = 0;
+    this.activeSymbol = 0;
+    this.advance();
+    var s = this.expression(0);
+    return s.ev();
+  },
+
+  expression: function (rbp) {
+    var s = this.activeSymbol, left;
+    this.advance();
+    left = s.nud();
+
+    while (rbp < this.activeSymbol.lbp) {
+      s = this.activeSymbol;
+      this.advance();
+      left = s.led(left);
+    }
+
+    return left;
+  },
+
+
+
+
+ /**
+  * Defines a function.
+  * @method defineFunction
+  * @param id {String} Function name / symbol id.
+  * @param ev {Function} Evaluation function.
+  * @param noArgs {Boolean} [optional] True if function doesn't take arguments. Default is false.
+  */
+  defineFunction: function (id, ev, noArgs) {
+    this.defineSymbol(id, extend({
       nud: function () {
-        this.first = expression(70);
-        this.isPrefix = true;
+        this.args = [];
+        this.evaluator.advance('(');
+        if (!noArgs) {
+          while (1) {
+            this.args.push(this.evaluator.expression(0));
+            if (this.evaluator.activeSymbol.id != ',') {
+              break;
+            }
+            this.evaluator.advance(',');
+          }
+        }
+        this.evaluator.advance(')');
         return this;
       },
-      ev: function () {
-        return this.isPrefix ? -this.firstValue() : this.firstValue() - this.secondValue();
-      }
-    },
-
-    '*': {
-      lbp: 60,
-      ev: function () {
-        return this.firstValue() * this.secondValue();
-      }
-    },
-
-    '/': {
-      lbp: 60,
-      ev: function () {
-        var den = this.secondValue();
-        if (den === 0) {
-          throw new EvaluateException(
-            EvaluateException.TYPE_DIVIDE_BY_ZERO,
-            'Attempt to divide by 0 using the "/" operator.'
-          );
+      argValue: function (i) {
+        return this.args[i].ev();
+      },
+      argValues: function () {
+        var values = [];
+        for (var i = 0; i < this.args.length; i++) {
+          values.push(this.args[i].ev());
         }
-        return this.firstValue() / den;
+        return values;
       }
-    },
+    }, { ev: ev }));
+  },
 
-    '^': {
-      lbp: 70,
-      ev: function () {
-        return Math.pow(this.firstValue(), this.secondValue());
-      }
-    },
+ /**
+  * Defines functions.
+  * @method defineFunctions
+  * @param functions {Object} Keys are function names and values are evaluation functions.
+  */
+  defineFunctions: function (functions) {
+    for (var f in functions) {
+      this.defineFunction(f, functions[f]);
+    }
+  },
 
-    '==': {
-      lbp: 40,
-      ev: function () {
-        return this.firstValue() === this.secondValue() ? 1 : 0;
-      }
-    },
-
-    '!=': {
-      lbp: 40,
-      ev: function () {
-        return this.firstValue() === this.secondValue() ? 0 : 1;
-      }
-    },
-
-    '<': {
-      lbp: 40,
-      ev: function () {
-        return this.firstValue() < this.secondValue() ? 1 : 0;
-      }
-    },
-
-    '<=': {
-      lbp: 40,
-      ev: function () {
-        return this.firstValue() <= this.secondValue() ? 1 : 0;
-      }
-    },
-
-    '>': {
-      lbp: 40,
-      ev: function () {
-        return this.firstValue() > this.secondValue() ? 1 : 0;
-      }
-    },
-
-    '>=': {
-      lbp: 40,
-      ev: function () {
-        return this.firstValue() >= this.secondValue() ? 1 : 0;
-      }
-    },
-
-    '?': {
-      lbp: 20,
+ /**
+  * Defines an infix operator.
+  * @method defineInfixOperator
+  * @param id {String} Operator.
+  * @param lbp {Number} Left binding power.
+  * @param functions {Object} Additional functions: must include ev().
+  */
+  defineInfixOperator: function (id, lbp, functions) {
+    this.defineSymbol(id, extend({
+      lbp: lbp,
       led: function (symbol) {
         this.first = symbol;
-        this.second = expression(0);
-        advance(':');
-        this.third = expression(0);
+        this.second = this.evaluator.expression(this.lbp);
         return this;
       },
-      ev: function () {
-        return this.firstValue() ? this.secondValue() : this.third.ev();
+      firstValue: function () {
+        return this.first.ev();
+      },
+      secondValue: function () {
+        return this.second.ev();
       }
+    }, functions));
+  },
+
+ /**
+  * Defines infix operators.
+  * @method defineInfixOperators
+  * @param ops {Object} Keys are operator ids and values are objects with properties:
+  *    ev {Function} Evaluation function.
+  *    lbp {Number} Left binding power.
+  *    led {Function} [optional]
+  *    nud {Function} [optional]
+  */
+  defineInfixOperators: function (ops) {
+    for (var i in ops) {
+      var op    = ops[i],
+          funcs = {};
+      for (var k in op) {
+        if (k !== 'lbp') {
+          funcs[k] = op[k];
+        }
+      }
+      this.defineInfixOperator(i, op.lbp, funcs);
     }
-  });
+  },
 
+ /**
+  * Defines a right-associated infix operator.
+  * @method defineInfixROperator
+  * @param id {String} Identifier.
+  * @param lbp {Number} Left binding power.
+  * @param ev {Function} Evaluation function.
+  */
+  defineInfixROperator: function (id, lbp, ev) {
+    this.defineSymbol(id, {
+      lbp: lbp,
+      led: function (symbol) {
+        this.first = symbol;
+        this.second = this.evaluator.expression(this.lbp - 1);
+        return this;
+      },
+      ev: ev
+    });
+  },
 
-  // Define right-associative infix operators.
-  defineInfixROperators({
-
-    '&&': {
-      lbp: 30,
-      ev: function () {
-        return this.first.ev() && this.second.ev() ? 1 : 0;
-      }
-    },
-
-    '||': {
-      lbp: 30,
-      ev: function () {
-        return this.first.ev() || this.second.ev() ? 1 : 0;
-      }
+ /**
+  * Defines right-associative infix operators.
+  * @method defineInfixROperators
+  * @param ops {Object} Keys are operator ids and values are objects with properties:
+  *    ev {Function} Evaluation function.
+  *    lbp {Number} Left binding power.
+  */
+  defineInfixROperators: function (ops) {
+    for (var o in ops) {
+      this.defineInfixROperator(o, ops[o].lbp, ops[o].ev);
     }
+  },
 
-  });
+ /**
+  * Defines a name in symbol table.
+  * @method defineName
+  * @param id {String} Name.
+  * @param value {Any} Symbol value.
+  */
+  defineName: function (id, value) {
+    this.defineSymbol(id, {
+      value: value,
+      ev: function () {
+        return this.value;
+      }
+    });
+  },
 
+ /**
+  * Defines names in symbol table.
+  * @method defineNames
+  * @param names {Object} Keys are names and values are constant values.
+  */
+  defineNames: function (names) {
+    for (var n in names) {
+      this.defineName(n, names[n]);
+    }
+  },
 
-  // Define functions.
-  defineFunctions({
+ /**
+  * Defines a prefix operator in symbol table.
+  * @method definePrefixOperator
+  * @param id {String} Operator.
+  * @param functions {Object} Should include ev() plus optional nud() or led().
+  */
+  definePrefixOperator: function (id, functions) {
+    this.defineSymbol(id, extend({
+      nud: function () {
+        this.first = this.evaluator.expression(70);
+        return this;
+      }
+    }, functions));
+  },
+
+ /**
+  * Defines multiple prefix operators in symbol table.
+  * @method definePrefixOperators
+  * @param ops {Object} Keys are operator names and values are objects with function definitions.
+  */
+  definePrefixOperators: function (ops) {
+    for (var o in ops) {
+      this.definePrefixOperator(o, ops[o]);
+    }
+  },
+
+  defineSymbols: function () {
+
+    var me = this;
+
+    // Define basic symbols.
+    [':', ',', ')', ']', '}', END_TOKEN_ID].forEach(function (id) {
+      me.defineSymbol(id);
+    });
+
+    // Define constants.
+    this.defineNames({
+      'FALSE'   : 0,
+      'TRUE'    : 1,
+      'E'       : Math.E,
+      'LN2'     : Math.log(2),
+      'LN10'    : Math.log(10),
+      'PI'      : Math.PI,
+      'SQRT1_2' : 1 / Math.sqrt(2),
+      'SQRT2'   : Math.sqrt(2)
+    });
+    this.defineName(LITERAL_TOKEN_ID, 0);
+
+    // Define prefix operators.
+    this.definePrefixOperators({
+
+      '!': {
+        ev: function () {
+          return this.first.ev() > 0 ? 0 : 1;
+        }
+      },
+
+      '(': {
+        nud: function () {
+          var s = this.evaluator.expression(0);
+          this.evaluator.advance(')');
+          return s;
+        }
+      },
+
+      '[': {
+        nud: function () {
+         var s = this.evaluator.expression(0);
+         this.evaluator.advance(']');
+         return s;
+        }
+      },
+
+      '{': {
+        nud: function () {
+          var s = this.evaluator.expression(0);
+          this.evaluator.advance('}');
+          return s;
+        }
+      }
+
+    });
+
+    // Define infix operators.
+    this.defineInfixOperators({
+
+      '+': {
+        lbp: 50,
+        ev: function () {
+          return this.firstValue() + this.secondValue();
+        }
+      },
+
+      '-': {
+        lbp: 50,
+        // For case of prefix operator.
+        nud: function () {
+          this.first = this.evaluator.expression(70);
+          this.isPrefix = true;
+          return this;
+        },
+        ev: function () {
+          return this.isPrefix ? -this.firstValue() : this.firstValue() - this.secondValue();
+        }
+      },
+
+      '*': {
+        lbp: 60,
+        ev: function () {
+          return this.firstValue() * this.secondValue();
+        }
+      },
+
+      '/': {
+        lbp: 60,
+        ev: function () {
+          var den = this.secondValue();
+          if (den === 0) {
+            throw new EvaluateException(
+              EvaluateException.TYPE_DIVIDE_BY_ZERO,
+              'Attempt to divide by 0 using the "/" operator.'
+            );
+          }
+          return this.firstValue() / den;
+        }
+      },
+
+      '^': {
+        lbp: 70,
+        ev: function () {
+          return Math.pow(this.firstValue(), this.secondValue());
+        }
+      },
+
+      '==': {
+        lbp: 40,
+        ev: function () {
+          return this.firstValue() === this.secondValue() ? 1 : 0;
+        }
+      },
+
+      '!=': {
+        lbp: 40,
+        ev: function () {
+          return this.firstValue() === this.secondValue() ? 0 : 1;
+        }
+      },
+
+      '<': {
+        lbp: 40,
+        ev: function () {
+          return this.firstValue() < this.secondValue() ? 1 : 0;
+        }
+      },
+
+      '<=': {
+        lbp: 40,
+        ev: function () {
+          return this.firstValue() <= this.secondValue() ? 1 : 0;
+        }
+      },
+
+      '>': {
+        lbp: 40,
+        ev: function () {
+          return this.firstValue() > this.secondValue() ? 1 : 0;
+        }
+      },
+
+      '>=': {
+        lbp: 40,
+        ev: function () {
+          return this.firstValue() >= this.secondValue() ? 1 : 0;
+        }
+      },
+
+      '?': {
+        lbp: 20,
+        led: function (symbol) {
+          this.first = symbol;
+          this.second = this.evaluator.expression(0);
+          this.evaluator.advance(':');
+          this.third = this.evaluator.expression(0);
+          return this;
+        },
+        ev: function () {
+          return this.firstValue() ? this.secondValue() : this.third.ev();
+        }
+      }
+    });
+
+    // Define right-associative infix operators.
+    this.defineInfixROperators({
+
+      '&&': {
+        lbp: 30,
+        ev: function () {
+          return this.first.ev() && this.second.ev() ? 1 : 0;
+        }
+      },
+
+      '||': {
+        lbp: 30,
+        ev: function () {
+          return this.first.ev() || this.second.ev() ? 1 : 0;
+        }
+      }
+
+    });
+
+    // Define functions.
+    this.defineFunctions({
 
       // Single argument functions.
       'abs': function () {
@@ -488,318 +702,31 @@ function createSymbolTable () {
     });
 
     // Special case for functions with no arguments.
-    defineFunction('rand', function () {
+    this.defineFunction('rand', function () {
       return Math.random();
     }, true);
-}
-
-
-/**
- * Defines constants for names.
- * @method defineNames
- * @param names {Object} Keys are ids and values are constant values.
- * @static
- * @private
- */
-function defineNames (names) {
-  for (var n in names) {
-    defineName(n, names[n]);
-  }
-}
-
-/**
- * Defines prefix operators.
- * @method definePrefixOperators
- * @param ops {Object} Keys are operator ids and values are objects with properties:
- *    ev {Function} [optional] Evaluation function.
- *    nud {Function} [optional] Null function.
- * @static
- * @private
- */
-function definePrefixOperators (ops) {
-  for (var o in ops) {
-    definePrefixOperator(o, ops[o]);
-  }
-}
-
-/**
- * Defines infix operators.
- * @method defineInfixOperators
- * @param ops {Object} Keys are operator ids and values are objects with properties:
- *    ev {Function} Evaluation function.
- *    lbp {Number} Left binding power.
- *    led {Function}
- *    nud {Function}
- * @static
- * @private
- */
-function defineInfixOperators (ops) {
-  for (var i in ops) {
-    var op    = ops[i],
-        funcs = {};
-    for (var k in op) {
-      if (k !== 'lbp') {
-        funcs[k] = op[k];
-      }
-    }
-    defineInfixOperator(i, op.lbp, funcs);
-  }
-}
-
-/**
- * Defines right-associative infix operators.
- * @method defineInfixROperators
- * @param ops {Object} Keys are operator ids and values are objects with properties:
- *    ev {Function} Evaluation function.
- *    lbp {Number} Left binding power.
- * @static
- * @private
- */
-function defineInfixROperators (ops) {
-  for (var o in ops) {
-    defineInfixROperator(o, ops[o].lbp, ops[o].ev);
-  }
-}
-
-/**
- * Defines functions.
- * @method defineFunctions
- * @param functions {Object} Keys are function names and values are evaluation functions.
- * @static
- * @private
- */
-function defineFunctions (functions) {
-  for (var f in functions) {
-    defineFunction(f, functions[f]);
-  }
-}
-
-/**
- * Deletes a symbol.
- * @method deleteSymbol
- * @param id {String} Symbol id.
- * @return {Boolean} True on successful delete.
- * @static
- * @private
- */
-function deleteSymbol (id) {
-  delete m_symbolTable[id];
-}
-
-/**
- * Simple single-depth extend utility function.
- * @method extend
- * @param o1 {Object} Source object.
- * @param o2 {Object} [optional] Object with mix-in properties.
- * @return {Object} Modified o1.
- */
-function extend (o1, o2) {
-  if (o2) {
-    for (var p in o2) {
-      if (o2.hasOwnProperty(p)) {
-        o1[p] = o2[p];
-      }
-    }
-  }
-  return o1;
-}
-
-/**
- * Creates symbol template.
- * @method Symbol
- * @param id {String} Symbol id.
- * @param lbp {Number} [optional] Left binding power.
- * @return {Object} New object.
- */
-function Symbol (id, props) {
-
-  var o = Object.create({
-    id: id,
-    lbp: 0,
-    nud: function () {
-      return this;
-    },
-    led: function (/*left*/) {
-      return this;
-    },
-    ev: function () {
-      return 0;
-    }
-  });
-
-  return extend(o, props);
-}
-
-/**
- * Defines a symbol in symbol table.
- * @method defineSymbol
- * @param id {String} Unique name / identifier.
- * @param config {Object} Configuration for Symbol.
- * @static
- * @private
- */
-function defineSymbol (id, config) {
-  m_symbolTable[id] = Symbol(id, config || {});
-}
-
-/**
- * Defines a name.
- * @method defineName
- * @param id {String} Name.
- * @param value {Number} Value.
- * @static
- * @private
- */
-function defineName (id, value) {
-  defineSymbol(id, {
-    value: value,
-    ev: function () {
-      return this.value;
-    }
-  });
-}
-
-/**
- * Defines a prefix operator.
- * @method definePrefixOperator
- * @param id {String} Operator.
- * @param functions {Object} Function overrides. Must include ev().
- */
-function definePrefixOperator (id, functions) {
-  defineSymbol(id, extend({
-    nud: function () {
-      this.first = expression(70);
-      return this;
-    }
-  }, functions));
-}
-
-/**
- * Defines an infix operator.
- * @method defineInfixOperator
- * @param id {String} Operator.
- * @param lbp {Number} Left binding power.
- * @param functions {Object} Additional functions: must include ev().
- * @static
- * @private
- */
-function defineInfixOperator (id, lbp, functions) {
-  defineSymbol(id, extend({
-    lbp: lbp,
-    led: function (symbol) {
-      this.first = symbol;
-      this.second = expression(this.lbp);
-      return this;
-    },
-    firstValue: function () {
-      return this.first.ev();
-    },
-    secondValue: function () {
-      return this.second.ev();
-    }
-  }, functions));
-}
-
-/**
- * Defines a right-associated infix operator.
- * @method defineInfixROperator
- * @param id {String} Identifier.
- * @param lbp {Number} Left binding power.
- * @param ev {Function} Evaluation function.
- * @static
- * @private
- */
-function defineInfixROperator (id, lbp, ev) {
-  defineSymbol(id, {
-    lbp: lbp,
-    led: function (symbol) {
-      this.first = symbol;
-      this.second = expression(this.lbp - 1);
-      return this;
-    },
-    ev: ev
-  });
-}
-
-/**
- * Defines a function.
- * @method defineFunction
- * @param id {String} Function name / symbol id.
- * @param ev {Function} Evaluation function.
- * @param noArgs {Boolean} [optional] True if function doesn't take arguments. Default is false.
- * @static
- * @private
- */
-function defineFunction (id, ev, noArgs) {
-  defineSymbol(id, extend({
-    nud: function () {
-      this.args = [];
-      advance('(');
-      if (!noArgs) {
-        while (1) {
-          this.args.push(expression(0));
-          if (m_activeSymbol.id != ',') {
-            break;
-          }
-          advance(',');
-        }
-      }
-      advance(')');
-      return this;
-    },
-    argValue: function (i) {
-      return this.args[i].ev();
-    },
-    argValues: function () {
-      var values = [];
-      for (var i = 0; i < this.args.length; i++) {
-        values.push(this.args[i].ev());
-      }
-      return values;
-    }
-  }, { ev: ev }));
-}
-
-
-// Create default symbols.
-createSymbolTable();
-
-export function Evaluator () {}
-
-//export default {
-
-  Evaluator.defineName = defineName;
-  Evaluator.defineInfixOperator = defineInfixOperator;
-  Evaluator.defineInfixROperator = defineInfixROperator;
-  Evaluator.defineFunction = defineFunction;
-  Evaluator.definePrefixOperator = definePrefixOperator;
-
-  Evaluator.defineNames = defineNames;
-  Evaluator.defineInfixOperators = defineInfixOperators;
-  Evaluator.defineInfixROperators = defineInfixROperators;
-  Evaluator.defineFunctions = defineFunctions;
-  Evaluator.definePrefixOperators = definePrefixOperators;
-
-  Evaluator.deleteSymbol = deleteSymbol;
+  },
 
  /**
-  * Evalutes provided tokens.
-  * @method evaluate
-  * @param tokenObjs {Object[]} Each with type {String} and value {Any} properties.
-  * @return {Number} Evaluation result.
+  * Defines a Symbol in symbol table.
+  * @method defineSymbol
+  * @param id {String} Unique identifier for symbol.
+  * @param config {Object} Configuration object passed to Symbol.
   */
-  Evaluator.evaluate = function (tokenObjs) {
+  defineSymbol: function (id, config) {
+    config = config || {};
+    config.evaluator = this;
+    this.symbolTable[id] = Symbol(id, config);
+  },
 
-    var tokens = [];
-    for (var i = 0; i < tokenObjs.length; i++) {
-      tokens.push(tokenObjs[i].value);
-    }
+ /**
+  * Deletes a symbol.
+  * @method deleteSymbol
+  * @param id {String} Identifier.
+  * @return {Boolean} True on success.
+  */
+  deleteSymbol: function (id) {
+    return delete this.symbolTable[id];
+  }
 
-    m_tokenSet = tokens;
-    m_tokenIndex = 0;
-    m_activeSymbol = 0;
-    advance();
-    var s = expression(0);
-    return s.ev();
-  };
-//};
+};

@@ -2,10 +2,11 @@
 'use strict';
 
 var assert            = require('assert');
-var evaluator         = require('../dist/bundle').Evaluator;
+var Evaluator         = require('../dist/bundle').Evaluator;
 var EvaluateException = require('../dist/bundle').EvaluateException;
 var Parser            = require('../dist/bundle').Parser;
 
+var evaluator = new Evaluator();
 var parser = new Parser();
 
 describe('Evaluator', () => {
