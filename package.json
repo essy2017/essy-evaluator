@@ -1,0 +1,15 @@
+{
+  "name": "sc-expression",
+  "version": "1.0.0",
+  "description": "Parses and evaluates mathematical expressions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node './tests/parser-test.js'",
+    "test-evaluator": "node './tests/evaluator-test.js'"
+  },
+  "author": "Spencer Cherry",
+  "license": "ISC",
+  "devDependencies": {
+    "assert": "^1.4.1"
+  }
+}
