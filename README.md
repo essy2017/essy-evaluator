@@ -111,7 +111,8 @@ whether the operator is valid. Values can be "truthy" or "falsey".
 
 ### Evaluator ###
 The Evaluator class provides methods to evaluate an array of tokens returned from 
-`Parser.parse()` as well as define custom operators, functions, and names.
+`Parser.parse()` as well as define custom operators, functions, and names. See below 
+the methods section for lists of pre-defined constants, operators, and functions.
 
 #### Methods
 
@@ -183,6 +184,21 @@ values or include variables in your expressions.
     console.log(evaluator.evaluate(tokens)); // 7
 
 Note that `defineName()` will overwrite any existing definition without warning.
+
+#### Pre-defined Constants 
+`Evaluator` defines the following constants by default:
+
+Constant  | Description                 | Evaluates to
+:-------- | :-------------------------- | :-----------
+E         | Base of natural logarithm.  | ~2.718
+FALSE     | False                       | 0
+LN2       | Natural logarithm of 2      | ~0.693 
+LN10      | Natural logartihm of 10     | ~2.302 
+PI        | Pi                          | ~3.145 
+SQRT1_2   | 1 over the square root of 2 | ~0.707 
+SQRT2     | Square root of 2            | ~1.414 
+TRUE      | True                        | 1
+
 
 #### Pre-defined Functions
 `Evaluator` defines a number of functions by default:
