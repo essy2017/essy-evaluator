@@ -1,0 +1,10 @@
+{
+  "esnext": true,
+  "globals": {
+    "describe": true,
+    "it"      : true
+  },
+  "node": true,
+  "undef": true,
+  "unused": true
+}

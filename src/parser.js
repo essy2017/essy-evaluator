@@ -1,5 +1,4 @@
-var ParseException = require('./parse-exception.js');
-
+import { ParseException } from './parse-exception';
 
 /**
  * Default allowed operators.
@@ -40,7 +39,7 @@ var defaultOperators = {
  * Keys are operators and values are truthy (to include) or falsely (to exclude).
  *
  ******************************************************************************/
-function Parser (operators) {
+export function Parser (operators) {
   this.operators = defaultOperators;
   this.updateOperators(operators || {});
 }
@@ -51,8 +50,9 @@ function Parser (operators) {
  * @param operators {Object} New overrides and additions.
  */
 Parser.prototype.updateOperators = function (operators) {
-  for (var d in operators) {
-    this.operators[d] = operators[d];
+
+  for (var k in operators) {
+    this.operators[k] = operators[k];
   }
 
   // Update allowable prefixes and suffixes for multiple-character operators.
@@ -81,8 +81,6 @@ Parser.prototype.parse = function (txt) {
       n,						        // The number value.
       q,						        // The quote character.
       str,					        // The string value.
-      //prefix = '<>=&|!',		// Allowable first characters in two-character operators.
-      //suffix = '=&|',			  // Allowable second characters in two-character operators.
       result = [],          // An array to hold the results.
 
       make = function (type, value) {

@@ -1,8 +1,10 @@
 /* global describe, it */
 'use strict';
 
-var Parser         = require('../src/parser.js');
-var ParseException = require('../src/parse-exception.js');
+var Parser = require('../dist/bundle').Parser;
+var ParseException = require('../dist/bundle').ParseException;
+//var Parser         = require('../src/parser.js');
+//var ParseException = require('../src/parse-exception.js');
 var assert         = require('assert');
 var parser         = new Parser();
 

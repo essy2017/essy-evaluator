@@ -1,15 +1,11 @@
-var EvaluateException = require('./evaluate-exception.js');
+import { EvaluateException } from './evaluate-exception';
+
 var m_symbolTable = {};
 var m_activeSymbol;
 var m_tokenSet;
 var m_tokenIndex = 0;
-var m_customDefs = [];
-var NUMBER_TOKEN = 'number';
 var END_TOKEN_ID = '(end)';
 var LITERAL_TOKEN_ID = '(literal)';
-
-
-
 
 /**
  * Makes a new Symbol instance from the next simple token in the tokenSet collection and
@@ -104,7 +100,7 @@ function createSymbolTable () {
   });
 
   // Define constants.
-  defineConstants({
+  defineNames({
     'FALSE'   : 0,
     'TRUE'    : 1,
     'E'       : Math.E,
@@ -114,7 +110,7 @@ function createSymbolTable () {
     'SQRT1_2' : 1 / Math.sqrt(2),
     'SQRT2'   : Math.sqrt(2)
   });
-  defineConstant(LITERAL_TOKEN_ID, 0);
+  defineName(LITERAL_TOKEN_ID, 0);
 
 
   // Define prefix operators.
@@ -392,6 +388,18 @@ function createSymbolTable () {
         return this.argValues().reduce(function (prev, next) { return prev + next; }) / this.args.length;
       },
 
+      'median': function () {
+        var values = this.argValues().sort(function (a, b) {
+          return a - b;
+        });
+        if (values.length % 2 === 0) {
+          return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
+        }
+        else {
+          return (values[(values.length - 1) / 2]);
+        }
+      },
+
       'min': function () {
         return Math.min.apply(null, this.argValues());
       },
@@ -487,15 +495,15 @@ function createSymbolTable () {
 
 
 /**
- * Defines constants.
- * @method defineConstants
- * @param cons {Object} Keys are ids and values are constant values.
+ * Defines constants for names.
+ * @method defineNames
+ * @param names {Object} Keys are ids and values are constant values.
  * @static
  * @private
  */
-function defineConstants (cons) {
-  for (var c in cons) {
-    defineConstant(c, cons[c]);
+function defineNames (names) {
+  for (var n in names) {
+    defineName(n, names[n]);
   }
 }
 
@@ -566,6 +574,17 @@ function defineFunctions (functions) {
   }
 }
 
+/**
+ * Deletes a symbol.
+ * @method deleteSymbol
+ * @param id {String} Symbol id.
+ * @return {Boolean} True on successful delete.
+ * @static
+ * @private
+ */
+function deleteSymbol (id) {
+  delete m_symbolTable[id];
+}
 
 /**
  * Simple single-depth extend utility function.
@@ -624,14 +643,14 @@ function defineSymbol (id, config) {
 }
 
 /**
- * Defines a constant.
- * @method defineConstant
- * @param id {String} Constant.
- * @param value {Number} Constant value.
+ * Defines a name.
+ * @method defineName
+ * @param id {String} Name.
+ * @param value {Number} Value.
  * @static
  * @private
  */
-function defineConstant (id, value) {
+function defineName (id, value) {
   defineSymbol(id, {
     value: value,
     ev: function () {
@@ -745,19 +764,23 @@ function defineFunction (id, ev, noArgs) {
 // Create default symbols.
 createSymbolTable();
 
-module.exports = {
+export function Evaluator () {}
 
-  defineConstant: defineConstant,
-  defineInfixOperator: defineInfixOperator,
-  defineInfixROperator: defineInfixROperator,
-  defineFunction: defineFunction,
-  definePrefixOperator: definePrefixOperator,
+//export default {
 
-  defineConstants: defineConstants,
-  defineInfixOperators: defineInfixOperators,
-  defineInfixROperators: defineInfixROperators,
-  defineFunctions: defineFunctions,
-  definePrefixOperators: definePrefixOperators,
+  Evaluator.defineName = defineName;
+  Evaluator.defineInfixOperator = defineInfixOperator;
+  Evaluator.defineInfixROperator = defineInfixROperator;
+  Evaluator.defineFunction = defineFunction;
+  Evaluator.definePrefixOperator = definePrefixOperator;
+
+  Evaluator.defineNames = defineNames;
+  Evaluator.defineInfixOperators = defineInfixOperators;
+  Evaluator.defineInfixROperators = defineInfixROperators;
+  Evaluator.defineFunctions = defineFunctions;
+  Evaluator.definePrefixOperators = definePrefixOperators;
+
+  Evaluator.deleteSymbol = deleteSymbol;
 
  /**
   * Evalutes provided tokens.
@@ -765,7 +788,7 @@ module.exports = {
   * @param tokenObjs {Object[]} Each with type {String} and value {Any} properties.
   * @return {Number} Evaluation result.
   */
-  evaluate: function (tokenObjs) {
+  Evaluator.evaluate = function (tokenObjs) {
 
     var tokens = [];
     for (var i = 0; i < tokenObjs.length; i++) {
@@ -778,5 +801,5 @@ module.exports = {
     advance();
     var s = expression(0);
     return s.ev();
-  }
-};
+  };
+//};

@@ -1,16 +1,20 @@
 {
-  "name": "sc-expression",
+  "name": "essy-expression",
   "version": "1.0.0",
   "description": "Parses and evaluates mathematical expressions.",
-  "main": "index.js",
+  "main": "dist/bundle.js",
   "scripts": {
-    "test": "mocha",
-    "test-evaluator": "node './tests/evaluator-test.js'"
+    "build": "rollup -c rollup.config.js && rollup -c rollup.config.min.js",
+    "lint": "jshint index.js src test rollup.config.js rollup.config.min.js",
+    "test": "npm run build && mocha"
   },
   "author": "Spencer Cherry",
   "license": "ISC",
   "devDependencies": {
     "assert": "^1.4.1",
-    "mocha": "^4.0.1"
+    "jshint": "^2.9.5",
+    "mocha": "^4.0.1",
+    "rollup": "^0.51.8",
+    "rollup-plugin-uglify": "^2.0.1"
   }
 }

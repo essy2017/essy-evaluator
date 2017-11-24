@@ -2,9 +2,9 @@
 'use strict';
 
 var assert            = require('assert');
-var evaluator         = require('../src/evaluator.js');
-var EvaluateException = require('../src/evaluate-exception.js');
-var Parser            = require('../src/parser.js');
+var evaluator         = require('../dist/bundle').Evaluator;
+var EvaluateException = require('../dist/bundle').EvaluateException;
+var Parser            = require('../dist/bundle').Parser;
 
 var parser = new Parser();
 
@@ -16,7 +16,7 @@ describe('Evaluator', () => {
     });
     it('Should error on unrecognized symbol', () => {
       assert.throws(() => { evaluator.evaluate(parser.parse('bad_symbol')); }),
-      EvaluateException
+      EvaluateException // jshint ignore:line
     });
   });
 
@@ -41,7 +41,7 @@ describe('Evaluator', () => {
     it('3 - 1', () => { assert.strictEqual(evaluator.evaluate(parser.parse('3 - 1')), 2); });
     it('2 * 3', () => { assert.strictEqual(evaluator.evaluate(parser.parse('2 * 3')), 6); });
     it('1 / 4', () => { assert.strictEqual(evaluator.evaluate(parser.parse('1 / 4')), 1 / 4); });
-    it('1 / 0', () => { assert.throws(() => { evaluator.evaluate(parser.parse('1 / 0')); }, EvaluateException )});
+    it('1 / 0', () => { assert.throws(() => { evaluator.evaluate(parser.parse('1 / 0')); }, EvaluateException )});  // jshint ignore:line
     it('3 ^ 2', () => { assert.strictEqual(evaluator.evaluate(parser.parse('3 ^ 2')), 9); });
     it('3 == 3', () => { assert.strictEqual(evaluator.evaluate(parser.parse('3 == 3')), 1); });
     it('1 == 3', () => { assert.strictEqual(evaluator.evaluate(parser.parse('1 == 3')), 0); });
@@ -125,6 +125,10 @@ describe('Evaluator', () => {
     it('mean()', () => {
       assert.strictEqual(evaluator.evaluate(parser.parse('mean(1,2,3)')), 2);
     });
+    it('median()', () => {
+      assert.strictEqual(evaluator.evaluate(parser.parse('median(1, 2, 3)')), 2);
+      assert.strictEqual(evaluator.evaluate(parser.parse('median(1, 2, 3, 4)')), 2.5);
+    });
     it('min()', () => {
       assert.strictEqual(evaluator.evaluate(parser.parse('min(11,2,3)')), 2);
     });
@@ -178,6 +182,58 @@ describe('Evaluator', () => {
       assert.strictEqual(evaluator.evaluate(parser.parse('tan(9)')), Math.tan(9));
     });
 
+  });
+
+  describe('Custom definitions', () => {
+    it('Should add custom definition', () => {
+      evaluator.defineName('myConstant', 100);
+      assert.strictEqual(evaluator.evaluate(parser.parse('myConstant')), 100);
+    });
+    it('Should update custom definition', () => {
+      evaluator.defineName('myConstant', 100);
+      assert.strictEqual(evaluator.evaluate(parser.parse('myConstant')), 100);
+      evaluator.defineName('myConstant', 1000);
+      assert.strictEqual(evaluator.evaluate(parser.parse('myConstant')), 1000);
+    });
+    it('Should delete custom definition', () => {
+      evaluator.defineName('myConstant', 10);
+      assert.strictEqual(evaluator.evaluate(parser.parse('myConstant')), 10);
+      evaluator.deleteSymbol('myConstant');
+      assert.throws(() => { evaluator.evaluate(parser.parse('myConstant')); }, EvaluateException);
+    });
+  });
+
+  describe('Custom functions', () => {
+    it('Should add custom function', () => {
+      evaluator.defineFunction('myFunc', function () {
+        return this.argValue(0) * this.argValue(1);
+      });
+      assert.strictEqual(evaluator.evaluate(parser.parse('myFunc(2, 3)')), 6);
+    });
+  });
+
+  describe('Custom infix operators', () => {
+    it('Should add custom infix operator', () => {
+      evaluator.defineInfixOperator('#', 40, {
+        ev: function () {
+          return this.firstValue() + this.secondValue();
+        }
+      });
+      parser.updateOperators({ '#': 1 });
+      assert.strictEqual(evaluator.evaluate(parser.parse('2 # 3')), 5);
+    });
+  });
+
+  describe('Custom prefix operators', () => {
+    it('Should add custom prefix operator', () => {
+      evaluator.definePrefixOperator('#', {
+        ev: function () {
+          return 10 * this.first.ev();
+        }
+      });
+      parser.updateOperators({ '#': 1 });
+      assert.strictEqual(evaluator.evaluate(parser.parse('#10')), 100);
+    });
   });
 
 });

@@ -5,7 +5,7 @@
  * @constructor
  *
  ******************************************************************************/
-function ParseException (type, message) {
+export function ParseException (type, message) {
   this.type = type;
   this.message = message;
 }

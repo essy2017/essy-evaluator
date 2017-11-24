@@ -1,4 +1,4 @@
-function EvaluateException (type, message) {
+export function EvaluateException (type, message) {
   this.type = type;
   this.message = message;
 }
