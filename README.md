@@ -10,7 +10,7 @@ to enable a custom pseudo programming language.
 
 The module was created during development of 
 [Essy Tree](https://essytree.com), online decision tree 
-analysis software.
+analysis software, where it is used in production.
 
 Installation
 -------------------------------------
@@ -114,4 +114,24 @@ The Evaluator class provides methods to evaluate an array of tokens returned fro
 `Parser.parse()` as well as define custom operators, functions, and names.
 
 #### evaluate (tokens {Object[]})
-Evaluates array of tokens returned from `Parser.parse()`. 2
+Evaluates array of tokens returned from `Parser.parse()` and returns result, typically 
+a number.
+
+The `evaluate()` method will throw an `EvaluateException` in the following cases:
+  - Unrecognized token.
+  - Unexpected token (e.g., missing or misplaced parentheses).
+  - Division by zero.
+  - Invalid arguments provided to function (e.g., sqrt(-2)).
+
+### defineName (id {String}, value {Any})
+Defines a custom name. This can be useful if you want to define custom constant 
+values or include variables in your expressions.
+
+    var essy      = require('essy-evaluator');
+    var parser    = new essy.Parser();
+    var evaluator = new essy.Evaluator();
+    var tokens    = parser.parse('3 + myCustomName');
+    
+    evaluator.defineName('myCustomName', 4);
+    
+    console.log(evaluator.evaluate(tokens)); // 7
