@@ -201,11 +201,11 @@ function createSymbolTable () {
  */
 function extend (o1, o2) {
   if (o2) {
-  	for (var p in o2) {
-  		if (o2.hasOwnProperty(p)) {
-  			o1[p] = o2[p];
-  		}
-  	}
+    for (var p in o2) {
+      if (o2.hasOwnProperty(p)) {
+        o1[p] = o2[p];
+      }
+    }
   }
   return o1;
 }
@@ -220,18 +220,17 @@ function extend (o1, o2) {
 function Symbol (id, props) {
 
   var o = Object.create({
-  	id: id,
-  	lbp: 0,
-  	nud: function () {
-  		return this;
-  	},
-  	led: function (/*left*/) {
-  		return this;
-  	},
-  	ev: function () {
-  		return 0;
-  	}
-
+    id: id,
+    lbp: 0,
+    nud: function () {
+      return this;
+    },
+    led: function (/*left*/) {
+      return this;
+    },
+    ev: function () {
+      return 0;
+    }
   });
 
   return extend(o, props);
@@ -245,12 +244,12 @@ function Symbol (id, props) {
  * @return {Object} Original symbol with id and value properties.
  */
 function ConstantSymbol (id, value) {
-	return Symbol(id, {
-		value: value,
-		ev: function () {
-			return this.value;
-		}
-	});
+  return Symbol(id, {
+    value: value,
+    ev: function () {
+      return this.value;
+    }
+  });
 }
 
 
@@ -261,50 +260,50 @@ function ConstantSymbol (id, value) {
  * @return {Object} New symbol.
  */
 function PrefixSymbol (id, props) {
-	return Symbol(id, extend({
-		nud: function () {
-			this.first = expression(70);
-			return this;
-		}
-	}, props));
+  return Symbol(id, extend({
+    nud: function () {
+      this.first = expression(70);
+      return this;
+    }
+  }, props));
 }
 
 function PrefixNot () {
-	return PrefixSymbol('!', {
-		ev: function () {
-			return this.first.ev() > 0 ? 0 : 1;
-		}
-	});
+  return PrefixSymbol('!', {
+    ev: function () {
+      return this.first.ev() > 0 ? 0 : 1;
+    }
+  });
 }
 
 function PrefixParen () {
-	return PrefixSymbol('(', {
-		nud: function () {
-			var s = expression(0);
-			advance(')');
-			return s;
-		}
-	});
+  return PrefixSymbol('(', {
+    nud: function () {
+      var s = expression(0);
+      advance(')');
+      return s;
+    }
+  });
 }
 
 function PrefixBracket () {
-	return PrefixSymbol('[', {
-		nud: function () {
-			var s = expression(0);
-			advance(']');
-			return s;
-		}
-	});
+  return PrefixSymbol('[', {
+    nud: function () {
+      var s = expression(0);
+      advance(']');
+      return s;
+    }
+  });
 }
 
 function PrefixBrace () {
-	return PrefixSymbol('{', {
-		nud: function () {
-			var s = expression(0);
-			advance('}');
-			return s;
-		}
-	});
+  return PrefixSymbol('{', {
+    nud: function () {
+      var s = expression(0);
+      advance('}');
+      return s;
+    }
+  });
 }
 
 
