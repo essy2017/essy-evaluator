@@ -59,6 +59,13 @@ export function Evaluator () {
 
 Evaluator.prototype = {
 
+ /**
+  * Makes a new Symbol instance from the next simple token in the tokenSet
+  * collection and assigns it to the activeSymbol property.
+  * @method advance
+  * @param id {String} [optional] Provide to set a limit on right bounds of expression. Eg, for function would advance to "," in loop and then to ")".
+  * @return {Symbol} The next symbol in the expression.
+  */
   advance: function (id) {
 
     var o, t;
@@ -98,7 +105,13 @@ Evaluator.prototype = {
     return this.activeSymbol;
   },
 
+ /**
+  * Evaluates token collection.
+  * @method evaluate
+  * @param tokenObjs {Object[]} Each with type {String} and value {Any} properties.
+  */
   evaluate: function (tokenObjs) {
+    
     var tokens = [];
     for (var i = 0; i < tokenObjs.length; i++) {
       tokens.push(tokenObjs[i].value);
@@ -112,6 +125,12 @@ Evaluator.prototype = {
     return s.ev();
   },
 
+ /**
+  * Evaluates an expression.
+  * @method expression
+  * @param rbp {Number} Right binding power of calling symbol.
+  * @return {Symbol} The resulting symbol.
+  */
   expression: function (rbp) {
     var s = this.activeSymbol, left;
     this.advance();
@@ -128,6 +147,11 @@ Evaluator.prototype = {
 
 
 
+ /******************************************************************************
+  *
+  * Symbol definitions.
+  *
+  *****************************************************************************/
 
  /**
   * Defines a function.
@@ -307,6 +331,10 @@ Evaluator.prototype = {
     }
   },
 
+ /**
+  * Defines default symbols in table.
+  * @method defineSymbols
+  */
   defineSymbols: function () {
 
     var me = this;
