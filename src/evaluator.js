@@ -20,23 +20,23 @@ var LITERAL_TOKEN_ID = '(literal)';
  */
 function advance (id) {
 
-	var o, t;
-	if (id && m_activeSymbol && m_activeSymbol.id !== id) {
-		throw new EvaluateException(
+  var o, t;
+  if (id && m_activeSymbol && m_activeSymbol.id !== id) {
+    throw new EvaluateException(
       EvaluateException.TYPE_BAD_TOKEN,
-			'Expected token with id "' + id + '".'
-		);
-	}
+      'Expected token with id "' + id + '".'
+    );
+  }
 
-	// Last token so return.
-	if (m_tokenIndex >= m_tokenSet.length) {
-		m_activeSymbol = m_symbolTable[END_TOKEN_ID];
-		var keys = [];
-		for (var k in m_activeSymbol) {
-			keys.push(k);
-		}
-		return m_activeSymbol;
-	}
+  // Last token so return.
+  if (m_tokenIndex >= m_tokenSet.length) {
+    m_activeSymbol = m_symbolTable[END_TOKEN_ID];
+    var keys = [];
+    for (var k in m_activeSymbol) {
+      keys.push(k);
+    }
+    return m_activeSymbol;
+  }
 
 	t = m_tokenSet[m_tokenIndex];
 	m_tokenIndex += 1;
