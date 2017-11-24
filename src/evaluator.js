@@ -300,6 +300,15 @@ function createSymbolTable () {
         return Math.acos(a);
       },
 
+      'and': function () {
+        for (var i = 0; i < this.args.length; i++) {
+          if (this.argValue(i) <= 0) {
+            return 0;
+          }
+        }
+        return 1;
+      },
+
       'asin': function () {
         var a = this.argValue(0);
         if (a < 0 || a > 1) {
@@ -326,6 +335,17 @@ function createSymbolTable () {
         return Math.ceil(this.argValue(0));
       },
 
+      'choose': function () {
+        var i = this.argValue(0);
+        if (i < 1 || i > this.args.length) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "choose(' + i + ',...)": the index is out of bounds.'
+          );
+        }
+        return this.argValue(i);
+      },
+
       'cos': function () {
         return Math.cos(this.argValue(0));
       },
@@ -336,6 +356,10 @@ function createSymbolTable () {
 
       'floor': function () {
         return Math.floor(this.argValue(0));
+      },
+
+      'if': function () {
+        return this.argValue(0) > 0 ? this.argValue(1) : this.argValue(2);
       },
 
       'log': function () {
@@ -360,58 +384,6 @@ function createSymbolTable () {
         return Math.log(a);
       },
 
-      'not': function () {
-        return this.argValue(0) > 0 ? 0 : 1;
-      },
-
-      'round': function () {
-        return Math.round(this.argValue(0));
-      },
-
-      'sin': function () {
-        return Math.sin(this.argValue(0));
-      },
-
-      'sqrt': function () {
-        var a = this.argValue(0);
-        if (a <= 0) {
-          throw new EvaluateException(
-            EvaluateException.TYPE_ARGUMENT_RANGE,
-            'At "sqrt(' + a + ')": argument must be greater than 0.'
-          );
-        }
-        return Math.sqrt(a);
-      },
-
-      'tan': function () {
-        return Math.tan(this.argValue(0));
-      },
-
-      // Multiple argument functions.
-      'and': function () {
-        for (var i = 0; i < this.args.length; i++) {
-          if (this.argValue(i) <= 0) {
-            return 0;
-          }
-        }
-        return 1;
-      },
-
-      'choose': function () {
-        var i = this.argValue(0);
-        if (i < 1 || i > this.args.length) {
-          throw new EvaluateException(
-            EvaluateException.TYPE_ARGUMENT_RANGE,
-            'At "choose(' + i + ',...)": the index is out of bounds.'
-          );
-        }
-        return this.argValue(i);
-      },
-
-      'if': function () {
-        return this.argValue(0) > 0 ? this.argValue(1) : this.argValue(2);
-      },
-
       'max': function () {
         return Math.max.apply(null, this.argValues());
       },
@@ -433,6 +405,10 @@ function createSymbolTable () {
           );
         }
         return this.argValue(0) % a;
+      },
+
+      'not': function () {
+        return this.argValue(0) > 0 ? 0 : 1;
       },
 
       'or': function () {
@@ -474,8 +450,31 @@ function createSymbolTable () {
         return a + Math.random() * (this.argValue(1) - a);
       },
 
+      'round': function () {
+        return Math.round(this.argValue(0));
+      },
+
+      'sin': function () {
+        return Math.sin(this.argValue(0));
+      },
+
+      'sqrt': function () {
+        var a = this.argValue(0);
+        if (a <= 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "sqrt(' + a + ')": argument must be greater than 0.'
+          );
+        }
+        return Math.sqrt(a);
+      },
+
       'sum': function () {
         return this.argValues().reduce(function (a, b) { return a + b; });
+      },
+
+      'tan': function () {
+        return Math.tan(this.argValue(0));
       }
 
     });
@@ -743,16 +742,7 @@ function defineFunction (id, ev, noArgs) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
+// Create default symbols.
 createSymbolTable();
 
 module.exports = {
