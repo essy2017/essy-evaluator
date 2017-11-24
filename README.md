@@ -186,3 +186,9 @@ Note that `defineName()` will overwrite any existing definition without warning.
 
 #### Pre-defined Functions
 `Evaluator` defines a number of functions by default:
+
+Function             | Description
+:------------------- | :----------
+abs(x)               | Returns absolute value of x.
+acos(x)              | Returns arccosine of x.
+and(x0, x1, ... xN]) | Returns 1 if all arguments are greater than 0, else returns 0.
