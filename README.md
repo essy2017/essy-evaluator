@@ -200,6 +200,23 @@ SQRT2     | Square root of 2            | ~1.414
 TRUE      | True                        | 1
 
 
+#### Pre-defined Operators 
+`Evaluator` defines the following operators by default:
+
+Operator | Example     | Description    | Returns 
+:------- | :---------- | :------------- | :------
++        | x + y       | Addition       | Sum of x and y.
+-        | x - y       | Subtraction    | The difference between x and y.
+*        | x * y       | Multiplication | The product of x and y.
+/        | x / y       | Division       | x divided by y.
+^        | x ^ y       | Exponentiation | x raised to the y.
+!        | !x          | Logical not    | 0 if x is greater than 0, else 1.
+&&       | x && y      | Logical and    | 1 if x and y are greater than 0, else 0.
+||       | x || y      | Logical or     | 1 if x or y is greater than 0, else 0.
+? :      | x ? y : z   | Ternary        | y if x is greater than 0, else z.
+()       | x * (y + z) | Parentheses    | Grouping for operator precedence.
+
+
 #### Pre-defined Functions
 `Evaluator` defines a number of functions by default:
 
