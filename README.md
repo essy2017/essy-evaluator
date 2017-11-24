@@ -113,7 +113,9 @@ whether the operator is valid. Values can be "truthy" or "falsey".
 The Evaluator class provides methods to evaluate an array of tokens returned from 
 `Parser.parse()` as well as define custom operators, functions, and names.
 
-#### evaluate (tokens {Object[]})
+#### Methods
+
+##### evaluate (tokens {Object[]})
 Evaluates array of tokens returned from `Parser.parse()` and returns result, typically 
 a number.
 
@@ -123,7 +125,7 @@ The `evaluate()` method will throw an `EvaluateException` in the following cases
   - Division by zero.
   - Invalid arguments provided to function (e.g., sqrt(-2)).
 
-### defineFunction (name {String}, ev {Function} [, noArgs {Boolean}])
+##### defineFunction (name {String}, ev {Function} [, noArgs {Boolean}])
 Defines a custom function. The `name` is the name for the function and `ev` is 
 the function body. The `noArgs` flag should be set to true if the function does 
 not accept any arguments; by default this value is false.
@@ -139,7 +141,7 @@ not accept any arguments; by default this value is false.
     
     console.log(evaluator.evaluate(tokens)); // 5
 
-As seen above, the provided `ev` function has access to provided argument values 
+As seen above, the `ev` function has access to provided argument values 
 via the `argValue()` method, which accepts an argument index. In the above, 
 `argValue(0) === 2` and `argValue(1) === 3`.
 
@@ -161,11 +163,13 @@ You can also define functions that accept an arbitrary number of arguments:
       
       return values;
     });
+    
+    console.log(evaluator.evaluate(tokens)); // 10
 
 The above makes use of the `argValues()` method, which evaluates and returns all 
 argument values.
 
-### defineName (name {String}, value {Any})
+##### defineName (name {String}, value {Any})
 Defines a custom name. This can be useful if you want to define custom constant 
 values or include variables in your expressions.
 
@@ -179,3 +183,6 @@ values or include variables in your expressions.
     console.log(evaluator.evaluate(tokens)); // 7
 
 Note that `defineName()` will overwrite any existing definition without warning.
+
+#### Pre-defined Functions
+`Evaluator` defines a number of functions by default:
