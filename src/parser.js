@@ -35,13 +35,15 @@ var defaultOperators = {
  * Parser.
  * @class Parser
  * @constructor
- * @param operators {Object} [optional] Override or add allowed operators.
- * Keys are operators and values are truthy (to include) or falsely (to exclude).
+ * @param config {Object} [optional] Configuration with properties:
+ *    operators {Object} [optional] Override or add allowed operators.
+ *    Keys are operators and values are truthy (to include) or falsely (to exclude).
  *
  ******************************************************************************/
-export function Parser (operators) {
+export function Parser (config) {
+  config = config || {};
   this.operators = defaultOperators;
-  this.updateOperators(operators || {});
+  this.updateOperators(config.operators || {});
 }
 
 /**

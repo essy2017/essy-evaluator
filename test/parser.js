@@ -1,10 +1,8 @@
 /* global describe, it */
 'use strict';
 
-var Parser = require('../dist/bundle').Parser;
+var Parser         = require('../dist/bundle').Parser;
 var ParseException = require('../dist/bundle').ParseException;
-//var Parser         = require('../src/parser.js');
-//var ParseException = require('../src/parse-exception.js');
 var assert         = require('assert');
 var parser         = new Parser();
 
@@ -121,7 +119,9 @@ describe('Parser', () => {
 
   describe('Operator overrides', () => {
     it('Should override default', () => {
-      parser = new Parser({ '+': 0 });
+      parser = new Parser({
+        operators: { '+': 0 }
+      });
       assert.throws(
         () => { parser.parse('1 + 2'); },
         ParseException
@@ -137,7 +137,9 @@ describe('Parser', () => {
       );
     });
     it('Should recognize custom', () => {
-      parser = new Parser({ '$': 1 });
+      parser = new Parser({
+        operators: { '$': 1 }
+      });
       assert.deepEqual(
         parser.parse('4 $ 5'),
         [
