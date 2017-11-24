@@ -30,7 +30,7 @@ Documentation
 The Parser class provides a method `parse()` to parse an expression. There is a
 default set of recognized operators that can be customized.
 
-### Parser([config {Object}])
+### Parser ([config {Object}])
 Constructs a new `Parser` instance. Accepts an optional configuration object that can
 be used to disable default operators or add new operators. For example, the following 
 disables the default "+" operator and adds two custom operators, "#" and "$".
@@ -71,12 +71,35 @@ By default the following operators are defined:
   - '&&'
   - '||'
 
-### parse(expression {String})
-Parses an expression into tokens. `parse` returns an array of simple token objects, 
+### parse (expression {String})
+Parses an expression into tokens. `parse()` returns an array of simple token objects, 
 each with properties `type {String}` and `value {Any}`. The token type can be one of the 
 following:  
 
-  - *name* All strings not enclosed in quotes are converted to name tokens. The value is 
+  - __name__ All strings not enclosed in quotes are converted to name tokens. The value is 
     equal to the name.
-  - *number* Numbers represented in decimal or scientific notiation.
-  - *operator* Any operator defined in the operator list. 
+  - __number__ Numbers represented in decimal or scientific notiation.
+  - __operator__ Any operator defined in the operator list. 
+  - __string__ Any string encapsulated in quotes.
+  
+`parse()` will throw a `ParseException` in the following cases:
+
+  - Invalid number
+  - Invalid trailing operator
+  - Unrecognized operator 
+  - Unterminated string 
+  
+### updateOperators (operators {Object})
+Updates valid operator list. Keys should be the operator (e.g., '+') and values indicate 
+whether the operator is valid. Values can be "truthy" or "falsey".
+
+    parser.updateOperators({
+      
+      // Disable some built-in operators. false or 0 work just as well.
+      '+': false,
+      '*': 0,
+      
+      // Add some custom operators.
+      '$': true,
+      '#': 1
+    });
