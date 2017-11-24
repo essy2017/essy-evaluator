@@ -1,11 +1,11 @@
 /*******************************************************************************
  *
- * Class for representing Parser errors.
+ * Class for representing Parser exceptions.
  * @class ParseError
  * @constructor
  *
  ******************************************************************************/
-function ParseError (type, message) {
+function ParseException (type, message) {
   this.type = type;
   this.message = message;
 }
@@ -13,9 +13,9 @@ function ParseError (type, message) {
 /**
  * Return string representation of error.
  * @method toString
- * @return {String} Error type and message.
+ * @return {String} Exception type and message.
  */
-ParseError.prototype.toString = function () {
+ParseException.prototype.toString = function () {
   return this.type + ': ' + this.message;
 };
 
@@ -25,7 +25,7 @@ ParseError.prototype.toString = function () {
  * @type String
  * @static
  */
-ParseError.TYPE_INVALID_EXPONENT = 'Invalid Exponent';
+ParseException.TYPE_INVALID_EXPONENT = 'Invalid Exponent';
 
 /**
  * Type for invalid number.
@@ -33,7 +33,7 @@ ParseError.TYPE_INVALID_EXPONENT = 'Invalid Exponent';
  * @type String
  * @static
  */
-ParseError.TYPE_INVALID_NUMBER = 'Invalid Number';
+ParseException.TYPE_INVALID_NUMBER = 'Invalid Number';
 
 /**
  * Type for invalid operator.
@@ -41,7 +41,7 @@ ParseError.TYPE_INVALID_NUMBER = 'Invalid Number';
  * @type String
  * @static
  */
-ParseError.TYPE_INVALID_OPERATOR = 'Invalid Operator';
+ParseException.TYPE_INVALID_OPERATOR = 'Invalid Operator';
 
 /**
  * Type for trailing operator.
@@ -49,7 +49,7 @@ ParseError.TYPE_INVALID_OPERATOR = 'Invalid Operator';
  * @type String
  * @static
  */
-ParseError.TYPE_TRAILING_OPERATOR = 'Trailing Operator';
+ParseException.TYPE_TRAILING_OPERATOR = 'Trailing Operator';
 
 /**
  * Type for unterminated string.
@@ -57,6 +57,6 @@ ParseError.TYPE_TRAILING_OPERATOR = 'Trailing Operator';
  * @type String
  * @static
  */
-ParseError.TYPE_UNTERMINATED_STRING = 'Unterminated String';
+ParseException.TYPE_UNTERMINATED_STRING = 'Unterminated String';
 
-module.exports = ParseError;
+module.exports = ParseException;

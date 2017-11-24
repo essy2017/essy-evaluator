@@ -17,6 +17,8 @@ var LITERAL_TOKEN_ID = '(literal)';
  * @method advance
  * @param id {String} [optional] Provide to set a limit on right bounds of expression. Eg, for function would advance to "," in loop and then to ")".
  * @return {Symbol} The next symbol in the expression.
+ * @static
+ * @private
  */
 function advance (id) {
 
@@ -62,6 +64,8 @@ function advance (id) {
  * @method expression
  * @param rbp {Number} Right binding power of calling symbol.
  * @return {Symbol} The resulting symbol.
+ * @static
+ * @private
  */
 function expression (rbp) {
 
@@ -78,115 +82,490 @@ function expression (rbp) {
   return left;
 }
 
-/**
- * Adds a symbol to collection.
- * @method addSymbol
- * @param symbol {Object}
- */
-function addSymbol (symbol) {
-  m_symbolTable[symbol.id] = symbol;
-}
 
-/**
- * Adds a constant symbol to collection.
- * @method addConstantSymbol
- * @param id {String} Symbol identifier.
- * @param value {Number} Symbol value.
- */
-function addConstantSymbol (id, value) {
-  addSymbol(ConstantSymbol(id, value));
-}
 
-/**
- * Adds a simple symbol with only id to collection.
- * @method addSimpleSymbol
- * @param id {String} Symbol identifier.
- */
-function addSimpleSymbol (id) {
-  addSymbol(Symbol(id));
-}
+/*******************************************************************************
+ *
+ * Default symbol definitions.
+ *
+ ******************************************************************************/
 
 /**
  * Populates symbol table with all pre-defined symbols.
  * @method createSymbolTable
+ * @static
+ * @private
  */
 function createSymbolTable () {
 
-  addSimpleSymbol(':');
-  addSimpleSymbol(',');
-  addSimpleSymbol(')');
-  addSimpleSymbol(']');
-  addSimpleSymbol('}');
-  addSimpleSymbol(END_TOKEN_ID);
-  addConstantSymbol(LITERAL_TOKEN_ID, 0);
+  // Define simple symbols.
+  [':', ',', ')', ']', '}', END_TOKEN_ID].forEach(function (id) {
+    defineSymbol(id);
+  });
 
-  // Constants.
-  addConstantSymbol('FALSE', 0);
-  addConstantSymbol('TRUE', 1);
-  addConstantSymbol('E', Math.E);
-  addConstantSymbol('LN2', Math.log(2));
-  addConstantSymbol('LN10', Math.log(10));
-  addConstantSymbol('PI', Math.PI);
-  addConstantSymbol('SQRT1_2', 1 / Math.sqrt(2));
-  addConstantSymbol('SQRT2', Math.sqrt(2));
+  // Define constants.
+  defineConstants({
+    'FALSE'   : 0,
+    'TRUE'    : 1,
+    'E'       : Math.E,
+    'LN2'     : Math.log(2),
+    'LN10'    : Math.log(10),
+    'PI'      : Math.PI,
+    'SQRT1_2' : 1 / Math.sqrt(2),
+    'SQRT2'   : Math.sqrt(2)
+  });
+  defineConstant(LITERAL_TOKEN_ID, 0);
 
-  // Prefix operators.
-  addSymbol(PrefixNot());
-  addSymbol(PrefixParen());
-  addSymbol(PrefixBracket());
-  addSymbol(PrefixBrace());
 
-  // Infix operators.
-  addSymbol(InfixAdd());
-  addSymbol(InfixSubtract());
-  addSymbol(InfixMultiply());
-  addSymbol(InfixDivide());
-  addSymbol(InfixPow());
-  addSymbol(InfixEqual());
-  addSymbol(InfixNotEqual());
-  addSymbol(InfixLessThan());
-  addSymbol(InfixLessThanOrEqual());
-  addSymbol(InfixGreaterThan());
-  addSymbol(InfixGreaterThanOrEqual());
-  addSymbol(InfixTernary());
-  addSymbol(InfixAnd());
-  addSymbol(InfixOr());
+  // Define prefix operators.
+  definePrefixOperators({
 
-  // Functions (single argument).
-  addSymbol(FuncAbs('abs'));
-  addSymbol(FuncAcos('acos'));
-  addSymbol(FuncAsin('asin'));
-  addSymbol(FuncAtan('atan'));
-  addSymbol(FuncCeiling('ceiling'));
-  addSymbol(FuncCos('cos'));
-  addSymbol(FuncExp('exp'));
-  addSymbol(FuncFloor('floor'));
-  addSymbol(FuncLog('log'));
-  addSymbol(FuncLn('ln'));
-  addSymbol(FuncNot('not'));
-  addSymbol(FuncRand('rand'));
-  addSymbol(FuncRound('round'));
-  addSymbol(FuncSin('sin'));
-  addSymbol(FuncSqrt('sqrt'));
-  addSymbol(FuncTan('tan'));
+    '!': {
+      ev: function () {
+        return this.first.ev() > 0 ? 0 : 1;
+      }
+    },
 
-  // Functions (multiple arguments).
-  addSymbol(FuncAnd('and'));
-  addSymbol(FuncChoose('choose'));
-  addSymbol(FuncIf('if'));
-  addSymbol(FuncMax('max'));
-  addSymbol(FuncMean('mean'));
-  addSymbol(FuncMin('min'));
-  addSymbol(FuncModulo('mod'));
-  addSymbol(FuncOr('or'));
-  addSymbol(FuncPow('pow'));
-  addSymbol(FuncProduct('product'));
-  addSymbol(FuncQuotient('quotient'));
-  addSymbol(FuncRandInt('randInt'));
-  addSymbol(FuncRandRange('randRange'));
-  addSymbol(FuncSum('sum'));
+    '(': {
+      nud: function () {
+        var s = expression(0);
+        advance(')');
+        return s;
+      }
+    },
+
+    '[': {
+      nud: function () {
+       var s = expression(0);
+       advance(']');
+       return s;
+      }
+    },
+
+    '{': {
+      nud: function () {
+        var s = expression(0);
+        advance('}');
+        return s;
+      }
+    }
+
+  });
+
+  // Define infix operators.
+  defineInfixOperators({
+
+    '+': {
+      lbp: 50,
+      ev: function () {
+        return this.firstValue() + this.secondValue();
+      }
+    },
+
+    '-': {
+      lbp: 50,
+      // For case of prefix operator.
+      nud: function () {
+        this.first = expression(70);
+        this.isPrefix = true;
+        return this;
+      },
+      ev: function () {
+        return this.isPrefix ? -this.firstValue() : this.firstValue() - this.secondValue();
+      }
+    },
+
+    '*': {
+      lbp: 60,
+      ev: function () {
+        return this.firstValue() * this.secondValue();
+      }
+    },
+
+    '/': {
+      lbp: 60,
+      ev: function () {
+        var den = this.secondValue();
+        if (den === 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_DIVIDE_BY_ZERO,
+            'Attempt to divide by 0 using the "/" operator.'
+          );
+        }
+        return this.firstValue() / den;
+      }
+    },
+
+    '^': {
+      lbp: 70,
+      ev: function () {
+        return Math.pow(this.firstValue(), this.secondValue());
+      }
+    },
+
+    '==': {
+      lbp: 40,
+      ev: function () {
+        return this.firstValue() === this.secondValue() ? 1 : 0;
+      }
+    },
+
+    '!=': {
+      lbp: 40,
+      ev: function () {
+        return this.firstValue() === this.secondValue() ? 0 : 1;
+      }
+    },
+
+    '<': {
+      lbp: 40,
+      ev: function () {
+        return this.firstValue() < this.secondValue() ? 1 : 0;
+      }
+    },
+
+    '<=': {
+      lbp: 40,
+      ev: function () {
+        return this.firstValue() <= this.secondValue() ? 1 : 0;
+      }
+    },
+
+    '>': {
+      lbp: 40,
+      ev: function () {
+        return this.firstValue() > this.secondValue() ? 1 : 0;
+      }
+    },
+
+    '>=': {
+      lbp: 40,
+      ev: function () {
+        return this.firstValue() >= this.secondValue() ? 1 : 0;
+      }
+    },
+
+    '?': {
+      lbp: 20,
+      led: function (symbol) {
+        this.first = symbol;
+        this.second = expression(0);
+        advance(':');
+        this.third = expression(0);
+        return this;
+      },
+      ev: function () {
+        return this.firstValue() ? this.secondValue() : this.third.ev();
+      }
+    }
+  });
+
+
+  // Define right-associative infix operators.
+  defineInfixROperators({
+
+    '&&': {
+      lbp: 30,
+      ev: function () {
+        return this.first.ev() && this.second.ev() ? 1 : 0;
+      }
+    },
+
+    '||': {
+      lbp: 30,
+      ev: function () {
+        return this.first.ev() || this.second.ev() ? 1 : 0;
+      }
+    }
+
+  });
+
+
+  // Define functions.
+  defineFunctions({
+
+      // Single argument functions.
+      'abs': function () {
+        return Math.abs(this.argValue(0));
+      },
+
+      'acos': function () {
+        var a = this.argValue(0);
+        if (a < -1 || a > 1) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "acos(' + a + ')": argument must be in range [-1, 1].'
+          );
+        }
+        return Math.acos(a);
+      },
+
+      'asin': function () {
+        var a = this.argValue(0);
+        if (a < 0 || a > 1) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "asin(' + a + ')": argument must be in range [0, 1].'
+          );
+        }
+        return Math.asin(a);
+      },
+
+      'atan': function () {
+        var a = this.argValue(0);
+        if (a < -1 || a > 1) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "atan(' + a + ')": argument must be in range [-1, 1].'
+          );
+        }
+        return Math.atan(a);
+      },
+
+      'ceiling': function () {
+        return Math.ceil(this.argValue(0));
+      },
+
+      'cos': function () {
+        return Math.cos(this.argValue(0));
+      },
+
+      'exp': function () {
+        return Math.exp(this.argValue(0));
+      },
+
+      'floor': function () {
+        return Math.floor(this.argValue(0));
+      },
+
+      'log': function () {
+        var a = this.argValue(0);
+        if (a <= 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "log(' + a + ')": argument must be greater than 0.'
+          );
+        }
+        return Math.log(10) / Math.log(a);
+      },
+
+      'ln': function () {
+        var a = this.argValue(0);
+        if (a <= 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "ln(' + a + ')": argument must be greater than 0.'
+          );
+        }
+        return Math.log(a);
+      },
+
+      'not': function () {
+        return this.argValue(0) > 0 ? 0 : 1;
+      },
+
+      'round': function () {
+        return Math.round(this.argValue(0));
+      },
+
+      'sin': function () {
+        return Math.sin(this.argValue(0));
+      },
+
+      'sqrt': function () {
+        var a = this.argValue(0);
+        if (a <= 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "sqrt(' + a + ')": argument must be greater than 0.'
+          );
+        }
+        return Math.sqrt(a);
+      },
+
+      'tan': function () {
+        return Math.tan(this.argValue(0));
+      },
+
+      // Multiple argument functions.
+      'and': function () {
+        for (var i = 0; i < this.args.length; i++) {
+          if (this.argValue(i) <= 0) {
+            return 0;
+          }
+        }
+        return 1;
+      },
+
+      'choose': function () {
+        var i = this.argValue(0);
+        if (i < 1 || i > this.args.length) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_ARGUMENT_RANGE,
+            'At "choose(' + i + ',...)": the index is out of bounds.'
+          );
+        }
+        return this.argValue(i);
+      },
+
+      'if': function () {
+        return this.argValue(0) > 0 ? this.argValue(1) : this.argValue(2);
+      },
+
+      'max': function () {
+        return Math.max.apply(null, this.argValues());
+      },
+
+      'mean': function () {
+        return this.argValues().reduce(function (prev, next) { return prev + next; }) / this.args.length;
+      },
+
+      'min': function () {
+        return Math.min.apply(null, this.argValues());
+      },
+
+      'mod': function () {
+        var a = this.argValue(1);
+        if (a === 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_DIVIDE_BY_ZERO,
+            'At "mod(' + a + ')": cannot divide by 0.'
+          );
+        }
+        return this.argValue(0) % a;
+      },
+
+      'or': function () {
+        for (var i = 0, n = this.args.length; i < n; i++) {
+          if (this.argValue(i) > 0) {
+            return 1;
+          }
+        }
+        return 0;
+      },
+
+      'pow': function () {
+        return Math.pow(this.argValue(0), this.argValue(1));
+      },
+
+      'product': function () {
+        return this.argValues().reduce(function (prev, next) { return prev * next; });
+      },
+
+      'quotient': function () {
+        var div = this.argValue(0);
+        var den = this.argValue(1);
+        if (den === 0) {
+          throw new EvaluateException(
+            EvaluateException.TYPE_DIVIDE_BY_ZERO,
+            'At "quotient(' + div + ', ' + den + ')": cannot divide by 0.'
+          );
+        }
+        return Math.floor(div / den);
+      },
+
+      'randInt': function () {
+        var a = this.argValue(0);
+        return a + parseInt(Math.random() * (this.argValue(1) - a));
+      },
+
+      'randRange': function () {
+        var a = this.argValue(0);
+        return a + Math.random() * (this.argValue(1) - a);
+      },
+
+      'sum': function () {
+        return this.argValues().reduce(function (a, b) { return a + b; });
+      }
+
+    });
+
+    // Special case for functions with no arguments.
+    defineFunction('rand', function () {
+      return Math.random();
+    }, true);
 }
 
+
+/**
+ * Defines constants.
+ * @method defineConstants
+ * @param cons {Object} Keys are ids and values are constant values.
+ * @static
+ * @private
+ */
+function defineConstants (cons) {
+  for (var c in cons) {
+    defineConstant(c, cons[c]);
+  }
+}
+
+/**
+ * Defines prefix operators.
+ * @method definePrefixOperators
+ * @param ops {Object} Keys are operator ids and values are objects with properties:
+ *    ev {Function} [optional] Evaluation function.
+ *    nud {Function} [optional] Null function.
+ * @static
+ * @private
+ */
+function definePrefixOperators (ops) {
+  for (var o in ops) {
+    definePrefixOperator(o, ops[o]);
+  }
+}
+
+/**
+ * Defines infix operators.
+ * @method defineInfixOperators
+ * @param ops {Object} Keys are operator ids and values are objects with properties:
+ *    ev {Function} Evaluation function.
+ *    lbp {Number} Left binding power.
+ *    led {Function}
+ *    nud {Function}
+ * @static
+ * @private
+ */
+function defineInfixOperators (ops) {
+  for (var i in ops) {
+    var op    = ops[i],
+        funcs = {};
+    for (var k in op) {
+      if (k !== 'lbp') {
+        funcs[k] = op[k];
+      }
+    }
+    defineInfixOperator(i, op.lbp, funcs);
+  }
+}
+
+/**
+ * Defines right-associative infix operators.
+ * @method defineInfixROperators
+ * @param ops {Object} Keys are operator ids and values are objects with properties:
+ *    ev {Function} Evaluation function.
+ *    lbp {Number} Left binding power.
+ * @static
+ * @private
+ */
+function defineInfixROperators (ops) {
+  for (var o in ops) {
+    defineInfixROperator(o, ops[o].lbp, ops[o].ev);
+  }
+}
+
+/**
+ * Defines functions.
+ * @method defineFunctions
+ * @param functions {Object} Keys are function names and values are evaluation functions.
+ * @static
+ * @private
+ */
+function defineFunctions (functions) {
+  for (var f in functions) {
+    defineFunction(f, functions[f]);
+  }
+}
 
 
 /**
@@ -234,14 +613,27 @@ function Symbol (id, props) {
 }
 
 /**
- * Returns new constant symbol.
- * @method ConstantSymbol
- * @param id {String} Unique identifier.
- * @param value {Number} Value for symbol.
- * @return {Object} Original symbol with id and value properties.
+ * Defines a symbol in symbol table.
+ * @method defineSymbol
+ * @param id {String} Unique name / identifier.
+ * @param config {Object} Configuration for Symbol.
+ * @static
+ * @private
  */
-function ConstantSymbol (id, value) {
-  return Symbol(id, {
+function defineSymbol (id, config) {
+  m_symbolTable[id] = Symbol(id, config || {});
+}
+
+/**
+ * Defines a constant.
+ * @method defineConstant
+ * @param id {String} Constant.
+ * @param value {Number} Constant value.
+ * @static
+ * @private
+ */
+function defineConstant (id, value) {
+  defineSymbol(id, {
     value: value,
     ev: function () {
       return this.value;
@@ -249,611 +641,113 @@ function ConstantSymbol (id, value) {
   });
 }
 
-
 /**
- * Returns new prefix operator symbol.
- * @method PrefixSymbol
- * @param id {String} Unqiue identifier.
- * @return {Object} New symbol.
+ * Defines a prefix operator.
+ * @method definePrefixOperator
+ * @param id {String} Operator.
+ * @param functions {Object} Function overrides. Must include ev().
  */
-function PrefixSymbol (id, props) {
-  return Symbol(id, extend({
+function definePrefixOperator (id, functions) {
+  defineSymbol(id, extend({
     nud: function () {
       this.first = expression(70);
       return this;
     }
-  }, props));
+  }, functions));
 }
-
-function PrefixNot () {
-  return PrefixSymbol('!', {
-    ev: function () {
-      return this.first.ev() > 0 ? 0 : 1;
-    }
-  });
-}
-
-function PrefixParen () {
-  return PrefixSymbol('(', {
-    nud: function () {
-      var s = expression(0);
-      advance(')');
-      return s;
-    }
-  });
-}
-
-function PrefixBracket () {
-  return PrefixSymbol('[', {
-    nud: function () {
-      var s = expression(0);
-      advance(']');
-      return s;
-    }
-  });
-}
-
-function PrefixBrace () {
-  return PrefixSymbol('{', {
-    nud: function () {
-      var s = expression(0);
-      advance('}');
-      return s;
-    }
-  });
-}
-
 
 /**
- * Returns new infix operator symbol.
- * @method InfixSymbol
- * @param id {String} Unique identifier.
+ * Defines an infix operator.
+ * @method defineInfixOperator
+ * @param id {String} Operator.
  * @param lbp {Number} Left binding power.
- * @return {Object} New symbol.
+ * @param functions {Object} Additional functions: must include ev().
+ * @static
+ * @private
  */
-function InfixSymbol (id, lbp, props) {
-
-  return Symbol(id, extend({
+function defineInfixOperator (id, lbp, functions) {
+  defineSymbol(id, extend({
     lbp: lbp,
     led: function (symbol) {
       this.first = symbol;
       this.second = expression(this.lbp);
       return this;
-    }
-  }, props));
-}
-
-function InfixAdd () {
-  return InfixSymbol('+', 50, {
-    ev: function () {
-      return this.first.ev() + this.second.ev();
-    }
-  });
-}
-
-function InfixSubtract () {
-
-  return InfixSymbol('-', 50, {
-
-    // For case of prefix operator.
-    nud: function () {
-      this.first = expression(70);
-      this.isPrefix = true;
-      return this;
     },
-    ev: function () {
-      return this.isPrefix ? -this.first.ev() : this.first.ev() - this.second.ev();
-    }
-  });
-}
-
-function InfixMultiply () {
-  return InfixSymbol('*', 60, {
-    ev: function () {
-      return this.first.ev() * this.second.ev();
-    }
-  });
-}
-
-function InfixDivide () {
-  return InfixSymbol('/', 60, {
-    ev: function () {
-      var den = this.second.ev();
-      if (den === 0) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_DIVIDE_BY_ZERO,
-          'Attempt to divide by 0 using the "/" operator.'
-        );
-      }
-      return this.first.ev() / den;
-    }
-  });
-}
-
-function InfixPow () {
-  return InfixSymbol('^', 70, {
-    ev: function () {
-      return Math.pow(this.first.ev(), this.second.ev());
-    }
-  });
-}
-
-function InfixEqual () {
-  return InfixSymbol('==', 40, {
-    ev: function () {
-      return this.first.ev() === this.second.ev() ? 1 : 0;
-    }
-  });
-}
-
-function InfixNotEqual () {
-  return InfixSymbol('!=', 40, {
-    ev: function () {
-      return this.first.ev() === this.second.ev() ? 0 : 1;
-    }
-  });
-}
-
-function InfixLessThan () {
-  return InfixSymbol('<', 40, {
-    ev: function () {
-      return this.first.ev() < this.second.ev() ? 1 : 0;
-    }
-  });
-}
-
-function InfixLessThanOrEqual () {
-  return InfixSymbol('<=', 40, {
-    ev: function () {
-      return this.first.ev() <= this.second.ev() ? 1 : 0;
-    }
-  });
-}
-
-function InfixGreaterThan () {
-  return InfixSymbol('>', 40, {
-    ev: function () {
-      return this.first.ev() > this.second.ev() ? 1 : 0;
-    }
-  });
-}
-
-function InfixGreaterThanOrEqual () {
-  return InfixSymbol('>=', 40, {
-    ev: function () {
-      return this.first.ev() >= this.second.ev() ? 1 : 0;
-    }
-  });
-}
-
-function InfixTernary () {
-  return InfixSymbol('?', 20, {
-    led: function (symbol) {
-      this.first = symbol;
-      this.second = expression(0);
-      advance(':');
-      this.third = expression(0);
-      return this;
+    firstValue: function () {
+      return this.first.ev();
     },
-    ev: function () {
-      return this.first.ev() ? this.second.ev() : this.third.ev();
+    secondValue: function () {
+      return this.second.ev();
     }
-  });
+  }, functions));
 }
-
 
 /**
- * Returns new right-associated infix operator.
- * @method InfixRSymbol
+ * Defines a right-associated infix operator.
+ * @method defineInfixROperator
  * @param id {String} Identifier.
  * @param lbp {Number} Left binding power.
- * @return {Object} New symbol.
+ * @param ev {Function} Evaluation function.
+ * @static
+ * @private
  */
-function InfixRSymbol (id, lbp, props) {
-  return Symbol(id, extend({
+function defineInfixROperator (id, lbp, ev) {
+  defineSymbol(id, {
     lbp: lbp,
     led: function (symbol) {
       this.first = symbol;
       this.second = expression(this.lbp - 1);
       return this;
-    }
-  }, props));
-}
-
-function InfixAnd () {
-  return InfixRSymbol('&&', 30, {
-    ev: function () {
-      return this.first.ev() && this.second.ev() ? 1 : 0;
-    }
+    },
+    ev: ev
   });
 }
-
-function InfixOr () {
-  return InfixRSymbol('||', 30, {
-    ev: function () {
-      return this.first.ev() || this.second.ev() ? 1 : 0;
-    }
-  });
-}
-
-
-
 
 /**
- * Creates new single-parameter function.
- * @method Func1Symbol
- * @param id {String} Function name.
- * @return {Object} New symbol.
+ * Defines a function.
+ * @method defineFunction
+ * @param id {String} Function name / symbol id.
+ * @param ev {Function} Evaluation function.
+ * @param noArgs {Boolean} [optional] True if function doesn't take arguments. Default is false.
+ * @static
+ * @private
  */
-function Func1Symbol (id, props) {
-  return Symbol(id, extend({
+function defineFunction (id, ev, noArgs) {
+  defineSymbol(id, extend({
     nud: function () {
+      this.args = [];
       advance('(');
-      this.param = expression(0);
-      advance(')');
-      return this;
-    }
-  }, props));
-}
-
-function FuncRand (id) {
-  return Symbol(id, {
-    nud: function () {
-      advance('(');
-      advance(')');
-      return this;
-    },
-    ev: function () {
-      return Math.random();
-    }
-	});
-}
-
-function FuncAbs (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.abs(this.param.ev());
-    }
-  });
-}
-
-function FuncAcos (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      var a = this.param.ev();
-      if (a < -1 || a > 1) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "acos(' + a + ')": argument must be in range [-1, 1].'
-        );
-      }
-      return Math.acos(a);
-    }
-  });
-}
-
-function FuncAsin (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      var a = this.param.ev();
-      if (a < 0 || a > 1) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "asin(' + a + ')": argument must be in range [0, 1].'
-        );
-      }
-      return Math.asin(a);
-    }
-  });
-}
-
-function FuncAtan (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      var a = this.param.ev();
-      if (a < -1 || a > 1) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "atan(' + a + ')": argument must be in range [-1, 1].'
-        );
-      }
-      return Math.atan(a);
-    }
-  });
-}
-
-function FuncCeiling (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.ceil(this.param.ev());
-    }
-  });
-}
-
-function FuncCos (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.cos(this.param.ev());
-    }
-  });
-}
-
-function FuncExp (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.exp(this.param.ev());
-    }
-  });
-}
-
-function FuncFloor (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.floor(this.param.ev());
-    }
-  });
-}
-
-function FuncLog (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      var a = this.param.ev();
-      if (a <= 0) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "log(' + a + ')": argument must be greater than 0.'
-        );
-      }
-      return Math.log(10) / Math.log(a);
-    }
-  });
-}
-
-function FuncLn (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      var a = this.param.ev();
-      if (a <= 0) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "ln(' + a + ')": argument must be greater than 0.'
-        );
-      }
-      return Math.log(a);
-    }
-  });
-}
-
-function FuncNot (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return this.param.ev() > 0 ? 0 : 1;
-    }
-  });
-}
-
-function FuncRound (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.round(this.param.ev());
-    }
-  });
-}
-
-function FuncSin (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.sin(this.param.ev());
-    }
-  });
-}
-
-function FuncSqrt (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      var a = this.param.ev();
-      if (a <= 0) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "sqrt(' + a + ')": argument must be greater than 0.'
-        );
-      }
-      return Math.sqrt(a);
-    }
-	});
-}
-
-function FuncTan (id) {
-  return Func1Symbol(id, {
-    ev: function () {
-      return Math.tan(this.param.ev());
-    }
-  });
-}
-
-
-
-/**
- * Creates new symbol for function with two or more arguments.
- * @method FuncSymbol
- * @param id {String} Function name.
- * @param props {Object} Additional mix-in properties.
- * @return {Object} New symbol.
- */
-function FuncSymbol (id, props) {
-  return Symbol(id, extend({
-    paramValue: function (i) {
-      return this.params[i].ev();
-    },
-    mapParamValues: function () {
-      return this.params.map(function (p) {
-        return p.ev();
-      });
-    },
-    nud: function () {
-
-      // A hack to reset params after symbol has been cloned.
-      this.params = [];
-
-      advance('(');
-      while (1) {
-        this.params.push(expression(0));
-        if (m_activeSymbol.id != ',') {
-          break;
+      if (!noArgs) {
+        while (1) {
+          this.args.push(expression(0));
+          if (m_activeSymbol.id != ',') {
+            break;
+          }
+          advance(',');
         }
-        advance(',');
       }
       advance(')');
       return this;
-    }
-  }, props));
-}
-
-function FuncAnd (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      for (var i = 0, n = this.params.length; i < n; i++) {
-        if (this.params[i].ev() <= 0) {
-          return 0;
-        }
+    },
+    argValue: function (i) {
+      return this.args[i].ev();
+    },
+    argValues: function () {
+      var values = [];
+      for (var i = 0; i < this.args.length; i++) {
+        values.push(this.args[i].ev());
       }
-      return 1;
+      return values;
     }
-  });
+  }, { ev: ev }));
 }
 
-function FuncChoose (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      var i = this.params[0].ev();
-      if (i < 1 || i > this.params.length) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_ARGUMENT_RANGE,
-          'At "choose(' + i + ',...)": the index is out of bounds.'
-        );
-      }
-      return this.params[i].ev();
-    }
-  });
-}
 
-function FuncIf (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return this.params[0].ev() > 0 ? this.params[1].ev() : this.params[2].ev();
-    }
-  });
-}
 
-function FuncMax (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return Math.max.apply(null, this.mapParamValues());
-    }
-  });
-}
 
-function FuncMean (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return this.mapParamValues().reduce(function (prev, next) { return prev + next; }) / this.params.length;
-    }
-  });
-}
 
-function FuncMin (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return Math.min.apply(null, this.mapParamValues());
-    }
-  });
-}
 
-function FuncModulo (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      var a = this.params[1].ev();
-      if (a === 0) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_DIVIDE_BY_ZERO,
-          'At "mod(' + a + ')": cannot divide by 0.'
-        );
-      }
-      return this.params[0].ev() % a;
-    }
-  });
-}
 
-function FuncOr (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      for (var i = 0, n = this.params.length; i < n; i++) {
-        if (this.params[i].ev() > 0) {
-          return 1;
-        }
-      }
-      return 0;
-    }
-  });
-}
-
-function FuncPow (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return Math.pow(this.params[0].ev(), this.params[1].ev());
-    }
-  });
-}
-
-function FuncProduct (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return this.mapParamValues().reduce(function (prev, next) { return prev * next; });
-    }
-	});
-}
-
-function FuncQuotient (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      const div = this.params[0].ev();
-      const den = this.params[1].ev();
-      if (den === 0) {
-        throw new EvaluateException(
-          EvaluateException.TYPE_DIVIDE_BY_ZERO,
-          'At "quotient(' + div + ', ' + den + ')": cannot divide by 0.'
-        );
-      }
-      return Math.floor(div / den);
-    }
-  });
-}
-
-function FuncRandInt (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      const a = this.params[0].ev();
-      return a + parseInt(Math.random() * (this.params[1].ev() - a));
-    }
-  });
-}
-
-function FuncRandRange (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      var a = this.params[0].ev();
-      return a + Math.random() * (this.params[1].ev() - a);
-    }
-  });
-}
-
-function FuncSum (id) {
-  return FuncSymbol(id, {
-    ev: function () {
-      return this.mapParamValues().reduce(function (a, b) { return a + b; });
-    }
-  });
-}
 
 
 
@@ -863,13 +757,26 @@ createSymbolTable();
 
 module.exports = {
 
+  defineConstant: defineConstant,
+  defineInfixOperator: defineInfixOperator,
+  defineInfixROperator: defineInfixROperator,
+  defineFunction: defineFunction,
+  definePrefixOperator: definePrefixOperator,
+
+  defineConstants: defineConstants,
+  defineInfixOperators: defineInfixOperators,
+  defineInfixROperators: defineInfixROperators,
+  defineFunctions: defineFunctions,
+  definePrefixOperators: definePrefixOperators,
+
  /**
   * Evalutes provided tokens.
   * @method evaluate
-  * @param tokens {Any[]} Can be numbers or strings denoting functions, operators, constants, or custom definitions.
+  * @param tokenObjs {Object[]} Each with type {String} and value {Any} properties.
   * @return {Number} Evaluation result.
   */
   evaluate: function (tokenObjs) {
+
     var tokens = [];
     for (var i = 0; i < tokenObjs.length; i++) {
       tokens.push(tokenObjs[i].value);

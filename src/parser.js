@@ -1,4 +1,4 @@
-var ParseError = require('./parse-error.js');
+var ParseException = require('./parse-exception.js');
 
 
 /**
@@ -71,7 +71,7 @@ Parser.prototype.updateOperators = function (operators) {
  * @method parse
  * @param txt {String} Expression.
  * @return {Object[]} Each object has "type" and "value" properties.
- * @throws ParseError
+ * @throws ParseException
  */
 Parser.prototype.parse = function (txt) {
 
@@ -166,7 +166,7 @@ Parser.prototype.parse = function (txt) {
           c = txt.charAt(i);
         }
         if (c < '0' || c > '9') {
-          throw new ParseError(ParseError.TYPE_INVALID_EXPONENT, str + c);
+          throw new ParseException(ParseException.TYPE_INVALID_EXPONENT, str + c);
         }
         do {
           i += 1;
@@ -177,7 +177,7 @@ Parser.prototype.parse = function (txt) {
 
       // Make sure the next character is not a letter.
       if (c >= 'a' && c <= 'z') {
-        throw new ParseError(ParseError.TYPE_INVALID_NUMBER, str + c);
+        throw new ParseException(ParseException.TYPE_INVALID_NUMBER, str + c);
       }
 
       // Convert the string value to a number. If it is finite, then it is a good token.
@@ -186,7 +186,7 @@ Parser.prototype.parse = function (txt) {
         result.push(make('number', n));
       }
       else {
-        throw new ParseError(ParseError.TYPE_INVALID_NUMBER, str);
+        throw new ParseException(ParseException.TYPE_INVALID_NUMBER, str);
       }
 
     }
@@ -200,7 +200,7 @@ Parser.prototype.parse = function (txt) {
       for (;;) {
         c = txt.charAt(i);
         if (c < ' ') {
-          throw new ParseError(ParseError.TYPE_UNTERMINATED_STRING, str);
+          throw new ParseException(ParseException.TYPE_UNTERMINATED_STRING, str);
         }
 
         // Look for the closing quote.
@@ -229,13 +229,13 @@ Parser.prototype.parse = function (txt) {
         i += 1;
       }
       if (!this.operators[str]) {
-        throw new ParseError(ParseError.TYPE_INVALID_OPERATOR, str);
+        throw new ParseException(ParseException.TYPE_INVALID_OPERATOR, str);
       }
       result.push(make('operator', str));
 
       // Check for end of string (can't end in operator -- causes infinite loop).
       if (i >= length) {
-        throw new ParseError(ParseError.TYPE_TRAILING_OPERATOR, str);
+        throw new ParseException(ParseException.TYPE_TRAILING_OPERATOR, str);
       }
     }
 
@@ -244,13 +244,13 @@ Parser.prototype.parse = function (txt) {
       i += 1;
 
       if (!this.operators[c]) {
-        throw new ParseError(ParseError.TYPE_INVALID_OPERATOR, c);
+        throw new ParseException(ParseException.TYPE_INVALID_OPERATOR, c);
       }
       result.push(make('operator', c));
 
       // Check for end of string (can't end in operator -- causes infinite loop).
       if (i >= length && c !== ')' && c !== ']') {
-        throw new ParseError(ParseError.TYPE_TRAILING_OPERATOR, c);
+        throw new ParseException(ParseException.TYPE_TRAILING_OPERATOR, c);
       }
 
       c = txt.charAt(i);
