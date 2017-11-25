@@ -22,16 +22,20 @@ Basic Usage
 
     var essy      = require('essy-evaluator');
     var evaluator = new essy.Evaluator();
+    var result;
 
     // Use built-in operators.
-    console.log(evaluator.evaluate('2 * 3')); // 6
+    result = evaluator.evaluate('2 * 3'); // 6
 
     // Use built-in functions.
-    console.log(evaluator.evaluate('max(1, 3, 2) + 4')); // 7
+    result = evaluator.evaluate('max(1, 3, 2) + 4'); // 7
 
     // Use custom definitions.
     evaluator.defineName('myCustomName', 8);
-    console.log(evaluator.evaluate('myCustomName / 4')); // 2
+    result = evaluator.evaluate('myCustomName / 4'); // 2
+    
+    // Equivalently pass custom definitions to evaluate.
+    result = evaluator.evaluate('myCustomName / 4', { myCustomName: 8 }); // 2
 
 Documentation
 -------------------------------------
@@ -122,18 +126,37 @@ the methods section for lists of pre-defined constants, operators, and functions
 
 #### Methods
 
-##### evaluate (exp {String|Object[]})
+##### evaluate (exp {String|Object[]} [, names {Object}])
 Evaluates expression `exp`, either a string or array of tokens returned from `Parser.parse()`.
 Returns result of evaluation, typically a number.
 
 If a string `exp` is provided, `evaluate()` will throw a `ParseException` if parsing 
 fails. See `Parser.parse()` for details.
 
+An optional `names` argument can be provided to specify custom definitions. This is a shortcut
+to calling `Evaluator.defineName()`.
+
 The `evaluate()` method will throw an `EvaluateException` in the following cases:
   - Unrecognized token.
   - Unexpected token (e.g., missing or misplaced parentheses).
   - Division by zero.
   - Invalid arguments provided to function (e.g., sqrt(-2)).
+
+    var essy      = require('essy-evaluator');
+    var parser    = new essy.Parser();
+    var evaluator = new essy.Evaluator();
+    var result;
+    
+    // Simple evaluation of string.
+    result = evaluator.evaluate('1 + 2');    // 3
+    
+    // Evaluation of tokens.
+    var tokens = parser.parse('1 + 2');
+    result = evaluator.evaluate(tokens);    // 3
+    
+    // Defining names.
+    result = evaluator.evaluate('1 + myConstant', { myConstant: 2 }); // 3
+    
 
 ##### defineFunction (name {String}, ev {Function} [, noArgs {Boolean}])
 Defines a custom function. The `name` is the name for the function and `ev` is
@@ -147,7 +170,7 @@ not accept any arguments; by default this value is false.
       return this.argValue(0) + this.argValue(1);
     });
 
-    console.log(evaluator.evaluate('addTwoNumber(2, 3)')); // 5
+    var result = evaluator.evaluate('addTwoNumber(2, 3)'); // 5
 
 As seen above, the `ev` function has access to provided argument values
 via the `argValue()` method, which accepts an argument index. In the above,
@@ -170,7 +193,7 @@ You can also define functions that accept an arbitrary number of arguments:
       return values;
     });
 
-    console.log(evaluator.evaluate('addNumbers(1,2,3,4)')); // 10
+    var result = evaluator.evaluate('addNumbers(1,2,3,4)'); // 10
 
 The above makes use of the `argValues()` method, which evaluates and returns all
 argument values.
@@ -184,7 +207,7 @@ values or include variables in your expressions.
 
     evaluator.defineName('myCustomName', 4);
 
-    console.log(evaluator.evaluate('3 + myCustomName')); // 7
+    var result = evaluator.evaluate('3 + myCustomName'); // 7
 
 Note that `defineName()` will overwrite any existing definition without warning.
 

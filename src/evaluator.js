@@ -110,8 +110,9 @@ Evaluator.prototype = {
   * Evaluates token collection.
   * @method evaluate
   * @param exp {String|Object[]} Expression or tokens, each with type {String} and value {Any} properties.
+  * @param names {Object} [optional] Names to define.
   */
-  evaluate: function (exp) {
+  evaluate: function (exp, names) {
 
     var tokens = [];
     
@@ -121,6 +122,10 @@ Evaluator.prototype = {
     }
     for (var i = 0; i < exp.length; i++) {
       tokens.push(exp[i].value);
+    }
+    
+    if (names) {
+      this.defineNames(names);
     }
 
     this.tokenSet = tokens;

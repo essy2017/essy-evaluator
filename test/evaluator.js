@@ -203,6 +203,9 @@ describe('Evaluator', () => {
       evaluator.deleteSymbol('myConstant');
       assert.throws(() => { evaluator.evaluate('myConstant'); }, EvaluateException);
     });
+    it('Should apply custom definitions in evaluate()', () => {
+      assert.strictEqual(evaluator.evaluate('10 + myConstant', { myConstant: 100 }), 110);
+    });
   });
 
   describe('Custom functions', () => {
