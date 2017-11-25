@@ -602,6 +602,15 @@ Evaluator.prototype = {
       'exp': function () {
         return Math.exp(this.argValue(0));
       },
+      
+      'fac': function () {
+        function fac (x) {
+          if (x < 0) return -1;
+          if (x === 0) return 1;
+          return x * fac(x - 1);
+        }
+        return fac(this.argValue(0));
+      },
 
       'floor': function () {
         return Math.floor(this.argValue(0));

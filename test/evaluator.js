@@ -106,6 +106,9 @@ describe('Evaluator', () => {
     it('exp()', () => {
       assert.strictEqual(evaluator.evaluate('exp(4)'), Math.exp(4));
     });
+    it('fac()', () => {
+      assert.strictEqual(evaluator.evaluate('fac(4)'), 24);
+    });
     it('floor()', () => {
       assert.strictEqual(evaluator.evaluate('floor(9.3)'), 9);
     });

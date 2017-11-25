@@ -257,6 +257,7 @@ ceiling(x)              | Returns x rounded up to nearest integer.
 choose(x, y0, ... yN)   | Returns the argument at index x. x = 1 will return y0.
 cos(x)                  | Returns cosine of x.
 exp(x)                  | Returns e raised to x.
+fac(x)                  | Returns factorial of x.
 floor(x)                | Returns x rounded down to nearest integer.
 if(x, y, z)             | Returns y if x is greater than 0, else returns z.
 log(x)                  | Returns the base-10 logarithm of x. Throws exception if x is less than or equal to 0.
