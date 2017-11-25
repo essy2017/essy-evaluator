@@ -142,6 +142,7 @@ The `evaluate()` method will throw an `EvaluateException` in the following cases
   - Division by zero.
   - Invalid arguments provided to function (e.g., sqrt(-2)).
 
+  
     var essy      = require('essy-evaluator');
     var parser    = new essy.Parser();
     var evaluator = new essy.Evaluator();
