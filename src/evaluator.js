@@ -111,7 +111,7 @@ Evaluator.prototype = {
   * @param tokenObjs {Object[]} Each with type {String} and value {Any} properties.
   */
   evaluate: function (tokenObjs) {
-    
+
     var tokens = [];
     for (var i = 0; i < tokenObjs.length; i++) {
       tokens.push(tokenObjs[i].value);
@@ -627,7 +627,14 @@ Evaluator.prototype = {
       },
 
       'mean': function () {
-        return this.argValues().reduce(function (prev, next) { return prev + next; }) / this.args.length;
+
+        var sum    = 0,
+            values = this.argValues();
+
+        for (var i = 0; i < values.length; i++) {
+          sum += values[i];
+        }
+        return sum / values.length;
       },
 
       'median': function () {
@@ -675,7 +682,12 @@ Evaluator.prototype = {
       },
 
       'product': function () {
-        return this.argValues().reduce(function (prev, next) { return prev * next; });
+        var product = 1,
+            values  = this.argValues();
+        for (var i = 0; i < values.length; i++) {
+          product *= values[i];
+        }
+        return product;
       },
 
       'quotient': function () {
@@ -720,7 +732,14 @@ Evaluator.prototype = {
       },
 
       'sum': function () {
-        return this.argValues().reduce(function (a, b) { return a + b; });
+
+        var sum    = 0,
+            values = this.argValues();
+
+        for (var i = 0; i < values.length; i++) {
+          sum += values[i];
+        }
+        return sum;
       },
 
       'tan': function () {
