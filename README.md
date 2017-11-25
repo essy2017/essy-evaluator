@@ -218,7 +218,7 @@ Operator | Example     | Description    | Returns
 
 
 #### Pre-defined Functions
-`Evaluator` defines a number of functions by default:
+`Evaluator` defines the following functions by default:
 
 Function                | Description
 :---------------------  | :----------
