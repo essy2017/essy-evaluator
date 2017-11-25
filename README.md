@@ -22,7 +22,6 @@ Basic Usage
 
     var essy      = require('essy-evaluator');
     var evaluator = new essy.Evaluator();
-    var tokens;
 
     // Use built-in operators.
     console.log(evaluator.evaluate('2 * 3')); // 6
