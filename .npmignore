@@ -1,2 +1,7 @@
 */
+.jshintrc
+.npmignore
+index.js
+rollup.config.js
+rollup.config.min.js
 !/dist
