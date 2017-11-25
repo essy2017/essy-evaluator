@@ -1,4 +1,5 @@
 import { EvaluateException } from './evaluate-exception';
+import { Parser } from './parser';
 
 var END_TOKEN_ID     = '(end)',
     LITERAL_TOKEN_ID = '(literal)';
@@ -108,13 +109,18 @@ Evaluator.prototype = {
  /**
   * Evaluates token collection.
   * @method evaluate
-  * @param tokenObjs {Object[]} Each with type {String} and value {Any} properties.
+  * @param exp {String|Object[]} Expression or tokens, each with type {String} and value {Any} properties.
   */
-  evaluate: function (tokenObjs) {
+  evaluate: function (exp) {
 
     var tokens = [];
-    for (var i = 0; i < tokenObjs.length; i++) {
-      tokens.push(tokenObjs[i].value);
+    
+    if (typeof exp === 'string') {
+      var parser = new Parser();
+      exp = parser.parse(exp);
+    }
+    for (var i = 0; i < exp.length; i++) {
+      tokens.push(exp[i].value);
     }
 
     this.tokenSet = tokens;

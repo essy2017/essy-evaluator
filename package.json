@@ -1,6 +1,6 @@
 {
   "name": "essy-evaluator",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Parses and evaluates mathematical expressions from Javascript strings.",
   "main": "dist/bundle.js",
   "scripts": {

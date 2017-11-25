@@ -21,22 +21,18 @@ Basic Usage
 -------------------------------------
 
     var essy      = require('essy-evaluator');
-    var parser    = new essy.Parser();
     var evaluator = new essy.Evaluator();
     var tokens;
 
     // Use built-in operators.
-    tokens = parser.parse('2 * 3');
-    console.log(evaluator.evaluate(tokens)); // 6
+    console.log(evaluator.evaluate('2 * 3')); // 6
 
     // Use built-in functions.
-    tokens = parser.parse('max(1, 3, 2) + 4');
-    console.log(evaluator.evaluate(tokens)); // 7
+    console.log(evaluator.evaluate('max(1, 3, 2) + 4')); // 7
 
     // Use custom definitions.
-    tokens = parser.parse('myCustomName / 4');
     evaluator.defineName('myCustomName', 8);
-    console.log(evaluator.evaluate(tokens)); // 2
+    console.log(evaluator.evaluate('myCustomName / 4')); // 2
 
 Documentation
 -------------------------------------
@@ -121,15 +117,18 @@ whether the operator is valid. Values can be "truthy" or "falsey".
 
 
 ### Evaluator ###
-The Evaluator class provides methods to evaluate an array of tokens returned from
+The Evaluator class provides methods to evaluate an expression or array of tokens returned from
 `Parser.parse()` as well as define custom operators, functions, and names. See below
 the methods section for lists of pre-defined constants, operators, and functions.
 
 #### Methods
 
-##### evaluate (tokens {Object[]})
-Evaluates array of tokens returned from `Parser.parse()` and returns result, typically
-a number.
+##### evaluate (exp {String|Object[]})
+Evaluates expression `exp`, either a string or array of tokens returned from `Parser.parse()`.
+Returns result of evaluation, typically a number.
+
+If a string `exp` is provided, `evaluate()` will throw a `ParseException` if parsing 
+fails. See `Parser.parse()` for details.
 
 The `evaluate()` method will throw an `EvaluateException` in the following cases:
   - Unrecognized token.
@@ -143,15 +142,13 @@ the function body. The `noArgs` flag should be set to true if the function does
 not accept any arguments; by default this value is false.
 
     var essy      = require('essy-evaluator');
-    var parser    = new essy.Parser();
     var evaluator = new essy.Evaluator();
-    var tokens    = parser.parse('addTwoNumbers(2, 3)');
 
     evaluator.defineFunction('addTwoNumbers', function () {
       return this.argValue(0) + this.argValue(1);
     });
 
-    console.log(evaluator.evaluate(tokens)); // 5
+    console.log(evaluator.evaluate('addTwoNumber(2, 3)')); // 5
 
 As seen above, the `ev` function has access to provided argument values
 via the `argValue()` method, which accepts an argument index. In the above,
@@ -160,9 +157,7 @@ via the `argValue()` method, which accepts an argument index. In the above,
 You can also define functions that accept an arbitrary number of arguments:
 
     var essy      = require('essy-evaluator');
-    var parser    = new essy.Parser();
     var evaluator = new essy.Evaluator();
-    var tokens    = parser.parse('addNumbers(1,2,3,4)');
 
     evaluator.defineFunction('addNumbers', function () {
 
@@ -176,7 +171,7 @@ You can also define functions that accept an arbitrary number of arguments:
       return values;
     });
 
-    console.log(evaluator.evaluate(tokens)); // 10
+    console.log(evaluator.evaluate('addNumbers(1,2,3,4)')); // 10
 
 The above makes use of the `argValues()` method, which evaluates and returns all
 argument values.
@@ -186,13 +181,11 @@ Defines a custom name. This can be useful if you want to define custom constant
 values or include variables in your expressions.
 
     var essy      = require('essy-evaluator');
-    var parser    = new essy.Parser();
     var evaluator = new essy.Evaluator();
-    var tokens    = parser.parse('3 + myCustomName');
 
     evaluator.defineName('myCustomName', 4);
 
-    console.log(evaluator.evaluate(tokens)); // 7
+    console.log(evaluator.evaluate('3 + myCustomName')); // 7
 
 Note that `defineName()` will overwrite any existing definition without warning.
 
