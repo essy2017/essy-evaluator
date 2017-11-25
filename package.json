@@ -23,5 +23,10 @@
     "expression",
     "math",
     "parse"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/essy2017/essy-evaluator.git"
+  },
+  "homepage": "https://github.com/essy2017/essy-evaluator.git#readme"
 }
