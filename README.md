@@ -172,7 +172,7 @@ not accept any arguments; by default this value is false.
       return this.argValue(0) + this.argValue(1);
     });
 
-    var result = evaluator.evaluate('addTwoNumber(2, 3)'); // 5
+    var result = evaluator.evaluate('addTwoNumbers(2, 3)'); // 5
 
 As seen above, the `ev` function has access to provided argument values
 via the `argValue()` method, which accepts an argument index. In the above,
