@@ -300,20 +300,21 @@ describe('Evaluator', () => {
     });
   });
 
-  /*describe('Custom functions', () => {
+  describe('Custom functions', () => {
     it('Should add custom function', () => {
-      evaluator.defineFunction('myFunc', function () {
-        return this.argValue(0) * this.argValue(1);
+      evaluator.defineFunction('myFunc', function (a, b) {
+        return a * b;
       });
       assert.strictEqual(evaluator.evaluate('myFunc(2, 3)'), 6);
     });
-  });*/
+  });
 
   describe('Custom infix operators', () => {
     it('Should add custom infix operator', () => {
-      evaluator.defineInfixOperator('#', 40, {
-        ev: function () {
-          return this.firstValue() + this.secondValue();
+      evaluator.defineInfixOperator('#', {
+        lbp: 40,
+        ev: function (a, b) {
+          return a.ev() + b.ev();
         }
       });
       parser.updateOperators({ '#': 1 });

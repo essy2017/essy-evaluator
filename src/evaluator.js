@@ -235,23 +235,27 @@ Evaluator.prototype = {
   * @method defineInfixOperator
   * @param id {String} Operator.
   * @param lbp {Number} Left binding power.
-  * @param functions {Object} Additional functions: must include ev().
+  * @param config {Object} With properties:
+  *   ev {Function} Evaluation function.
+  *   lbp {Number} Left binding power.
+  *   led {Function} [optional] Left denotation function.
+  *   nud {Function} [optional] Null denotation function.
   */
-  defineInfixOperator: function (id, lbp, functions) {
-    this.defineSymbol(id, extend({
-      lbp: lbp,
+  defineInfixOperator: function (id, config) {
+    var o = {
+      lbp: config.lbp,
       led: function (symbol) {
         this.first = symbol;
         this.second = this.evaluator.expression(this.lbp);
         return this;
       },
-      firstValue: function () {
-        return this.first.ev();
-      },
-      secondValue: function () {
-        return this.second.ev();
+      ev: function () {
+        return config.ev.call(this, this.first, this.second, this.third);
       }
-    }, functions));
+    };
+    if (config.led) o.led = config.led;
+    if (config.nud) o.nud = config.nud;
+    this.defineSymbol(id, o);
   },
 
  /**
@@ -265,14 +269,7 @@ Evaluator.prototype = {
   */
   defineInfixOperators: function (ops) {
     for (var i in ops) {
-      var op    = ops[i],
-          funcs = {};
-      for (var k in op) {
-        if (k !== 'lbp') {
-          funcs[k] = op[k];
-        }
-      }
-      this.defineInfixOperator(i, op.lbp, funcs);
+      this.defineInfixOperator(i, ops[i]);
     }
   },
 
@@ -291,7 +288,9 @@ Evaluator.prototype = {
         this.second = this.evaluator.expression(this.lbp - 1);
         return this;
       },
-      ev: ev
+      ev: function () {
+        return ev.call(this, this.first, this.second);
+      }
     });
   },
 
@@ -443,15 +442,15 @@ Evaluator.prototype = {
 
       '.': {
         lbp: 80,
-        ev: function () {
-          return this.second.ev(this.firstValue());
+        ev: function (a, b) {
+          return b.ev(a.ev());
         }
       },
 
       '+': {
         lbp: 50,
-        ev: function () {
-          return this.firstValue() + this.secondValue();
+        ev: function (a, b) {
+          return a.ev() + b.ev();
         }
       },
 
@@ -463,78 +462,78 @@ Evaluator.prototype = {
           this.isPrefix = true;
           return this;
         },
-        ev: function () {
-          return this.isPrefix ? -this.firstValue() : this.firstValue() - this.secondValue();
+        ev: function (a, b) {
+          return this.isPrefix ? -a.ev() : a.ev() - b.ev();
         }
       },
 
       '*': {
         lbp: 60,
-        ev: function () {
-          return this.firstValue() * this.secondValue();
+        ev: function (a, b) {
+          return a.ev() * b.ev();
         }
       },
 
       '/': {
         lbp: 60,
-        ev: function () {
-          var den = this.secondValue();
+        ev: function (a, b) {
+          var den = b.ev();
           if (den === 0) {
             throw new EvaluateException(
               EvaluateException.TYPE_DIVIDE_BY_ZERO,
               'Attempt to divide by 0 using the "/" operator.'
             );
           }
-          return this.firstValue() / den;
+          return a.ev() / den;
         }
       },
 
       '^': {
         lbp: 70,
-        ev: function () {
-          return Math.pow(this.firstValue(), this.secondValue());
+        ev: function (a, b) {
+          return Math.pow(a.ev(), b.ev());
         }
       },
 
       '==': {
         lbp: 40,
-        ev: function () {
-          return this.firstValue() === this.secondValue() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() === b.ev() ? 1 : 0;
         }
       },
 
       '!=': {
         lbp: 40,
-        ev: function () {
-          return this.firstValue() === this.secondValue() ? 0 : 1;
+        ev: function (a, b) {
+          return a.ev() === b.ev() ? 0 : 1;
         }
       },
 
       '<': {
         lbp: 40,
-        ev: function () {
-          return this.firstValue() < this.secondValue() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() < b.ev() ? 1 : 0;
         }
       },
 
       '<=': {
         lbp: 40,
-        ev: function () {
-          return this.firstValue() <= this.secondValue() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() <= b.ev() ? 1 : 0;
         }
       },
 
       '>': {
         lbp: 40,
-        ev: function () {
-          return this.firstValue() > this.secondValue() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() > b.ev() ? 1 : 0;
         }
       },
 
       '>=': {
         lbp: 40,
-        ev: function () {
-          return this.firstValue() >= this.secondValue() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() >= b.ev() ? 1 : 0;
         }
       },
 
@@ -547,8 +546,8 @@ Evaluator.prototype = {
           this.third = this.evaluator.expression(0);
           return this;
         },
-        ev: function () {
-          return this.firstValue() ? this.secondValue() : this.third.ev();
+        ev: function (a, b, c) {
+          return a.ev() ? b.ev() : c.ev();
         }
       }
     });
@@ -558,15 +557,15 @@ Evaluator.prototype = {
 
       '&&': {
         lbp: 30,
-        ev: function () {
-          return this.first.ev() && this.second.ev() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() && b.ev() ? 1 : 0;
         }
       },
 
       '||': {
         lbp: 30,
-        ev: function () {
-          return this.first.ev() || this.second.ev() ? 1 : 0;
+        ev: function (a, b) {
+          return a.ev() || b.ev() ? 1 : 0;
         }
       }
 
@@ -578,7 +577,6 @@ Evaluator.prototype = {
       // Single argument functions.
       'abs': function (x) {
         return Math.abs(x);
-        //return Math.abs(this.argValue(0));
       },
 
       'acos': function (a) {
