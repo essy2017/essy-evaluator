@@ -126,12 +126,6 @@ describe('Evaluator', () => {
       assert.strictEqual(evaluator.evaluate('ln(3)'), Math.log(3));
       assert.throws(() => { evaluator.evaluate('ln(-1.5)'); }, EvaluateException);
     });
-    it('map()', () => {
-      evaluator.defineFunction('mapper', function () {
-        return 2 * this.argValue(0);
-      });
-      assert.deepEqual(evaluator.evaluate('map([1,2,3], "mapper")'), [2, 4, 6]);
-    });
     it('max()', () => {
       assert.strictEqual(evaluator.evaluate('max(1,21,3)'), 21);
       assert.strictEqual(evaluator.evaluate('max([1,21,3])'), 21);
@@ -202,6 +196,84 @@ describe('Evaluator', () => {
     });
     it('tan()', () => {
       assert.strictEqual(evaluator.evaluate('tan(9)'), Math.tan(9));
+    });
+
+  });
+
+  describe('Array functions', () => {
+    it('andA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,3].andA()'), 1);
+      assert.strictEqual(evaluator.evaluate('[1,2,0].andA()'), 0);
+    });
+    it('everyA()', () => {
+      evaluator.defineFunction('threshold', function () {
+        return this.argValue(0) < 10;
+      });
+      assert.strictEqual(evaluator.evaluate('[1,2,3].everyA("threshold")'), 1);
+      assert.strictEqual(evaluator.evaluate('[1,2,11].everyA("threshold")'), 0);
+    });
+    it('filterA()', () => {
+      evaluator.defineFunction('myFilter', function () {
+        return this.argValue(0) < 3;
+      });
+      assert.deepEqual(evaluator.evaluate('[1,2,4,5].filterA("myFilter")'), [1, 2]);
+    });
+    it('includesA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,4,5].includesA(2)'), 1);
+      assert.strictEqual(evaluator.evaluate('[1,2,4,5].includesA(3)'), 0);
+    });
+    it('joinA()', () => {
+      assert.strictEqual(evaluator.evaluate('["a", "b", "c"].joinA("_")'), 'a_b_c');
+    });
+    it('mapA()', () => {
+      assert.deepEqual(evaluator.evaluate('[1,2,3].mapA("fac")'), [1, 2, 6]);
+      assert.deepEqual(evaluator.evaluate('[1,2,1+2].mapA("fac")'), [1, 2, 6]);
+    });
+    it('maxA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,9,3].maxA()'), 9);
+    });
+    it('meanA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,3].meanA()'), 2);
+    });
+    it('medianA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,3].medianA()'), 2);
+      assert.strictEqual(evaluator.evaluate('[1, 2, 3, 4].medianA()'), 2.5);
+    });
+    it('minA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,9,3].minA()'), 1);
+    });
+    it('orA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,3].orA()'), 1);
+      assert.strictEqual(evaluator.evaluate('[-1,-2,0].orA()'), 0);
+    });
+    it('productA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,3].productA()'), 6);
+    });
+    it('reduceA()', () => {
+      evaluator.defineFunction('reducer', function () {
+        return this.argValue(0) + this.argValue(1);
+      });
+      assert.strictEqual(evaluator.evaluate('[0,1,2,3].reduceA("reducer")'), 6);
+      assert.strictEqual(evaluator.evaluate('[1,2,3].reduceA("reducer", 0)'), 6);
+    });
+    it('reverseA()', () => {
+      assert.deepEqual(evaluator.evaluate('[1,2,3].reverseA()'), [3, 2, 1]);
+    });
+    it('sliceA()', () => {
+      assert.deepEqual(evaluator.evaluate('[1,2,3,4].sliceA(1,3)'), [2, 3]);
+    });
+    it('someA()', () => {
+      evaluator.defineFunction('checkSome', function () {
+        return this.argValue(0) === 5;
+      });
+      assert.strictEqual(evaluator.evaluate('[0,1,5].someA("checkSome")'), 1);
+      assert.strictEqual(evaluator.evaluate('[0,1,2].someA("checkSome")'), 0);
+    });
+    it('sumA()', () => {
+      assert.strictEqual(evaluator.evaluate('[1,2,3].sumA()'), 6);
+    });
+    it('Combinations', () => {
+      assert.deepEqual(evaluator.evaluate('[1,2,3].mapA("fac").reverseA()'), [6, 2, 1]);
     });
 
   });

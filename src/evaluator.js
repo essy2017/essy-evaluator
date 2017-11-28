@@ -134,6 +134,7 @@ Evaluator.prototype = {
     this.tokenIndex = 0;
     this.activeSymbol = 0;
     this.advance();
+
     var s = this.expression(0);
     return s.ev();
   },
@@ -174,7 +175,7 @@ Evaluator.prototype = {
   * @param noArgs {Boolean} [optional] True if function doesn't take arguments. Default is false.
   */
   defineFunction: function (id, ev, noArgs) {
-    this.defineSymbol(id, extend({
+    this.defineSymbol(id, {
       nud: function () {
         this.args = [];
         this.evaluator.advance('(');
@@ -188,6 +189,7 @@ Evaluator.prototype = {
           }
         }
         this.evaluator.advance(')');
+
         return this;
       },
       argValue: function (i) {
@@ -203,18 +205,20 @@ Evaluator.prototype = {
       argArray: function () {
         var a = this.argValue(0);
         return typeof a === 'object' ? a : this.argValues();
-      }
-    }, { ev: ev }));
+      },
+      ev: ev
+    });
   },
 
  /**
   * Defines functions.
   * @method defineFunctions
   * @param functions {Object} Keys are function names and values are evaluation functions.
+  * @param noArgs {Boolean} True if functions don't take arguments.
   */
-  defineFunctions: function (functions) {
+  defineFunctions: function (functions, noArgs) {
     for (var f in functions) {
-      this.defineFunction(f, functions[f]);
+      this.defineFunction(f, functions[f], noArgs);
     }
   },
 
@@ -365,6 +369,8 @@ Evaluator.prototype = {
     this.defineNames({
       'FALSE'   : 0,
       'TRUE'    : 1,
+      'false'   : 0,
+      'true'    : 1,
       'E'       : Math.E,
       'LN2'     : Math.log(2),
       'LN10'    : Math.log(10),
@@ -423,8 +429,16 @@ Evaluator.prototype = {
 
     });
 
+
     // Define infix operators.
     this.defineInfixOperators({
+
+      '.': {
+        lbp: 80,
+        ev: function () {
+          return this.second.ev(this.firstValue());
+        }
+      },
 
       '+': {
         lbp: 50,
@@ -663,19 +677,6 @@ Evaluator.prototype = {
         return Math.log(a);
       },
 
-      'map': function () {
-
-        var a      = this.argValue(0),
-            func   = this.argValue(1),
-            result = [];
-
-        for (var i = 0; i < a.length; i++) {
-          result.push(this.evaluator.evaluate(func + '(' + a[i] + ')'));
-        }
-
-        return result;
-      },
-
       'max': function () {
         return Math.max.apply(null, this.argArray());
       },
@@ -806,6 +807,159 @@ Evaluator.prototype = {
     // Special case for functions with no arguments.
     this.defineFunction('rand', function () {
       return Math.random();
+    }, true);
+
+
+    // Define array functions.
+    this.defineFunctions({
+
+      'everyA': function (a) {
+
+        var fn     = this.argValue(0),
+            result = true;
+
+        for (var i = 0; i < a.length; i++) {
+          result = result && this.evaluator.evaluate(fn + '(' + a[i] + ')');
+        }
+        return result ? 1 : 0;
+
+      },
+
+      'filterA': function (a) {
+
+        var fn     = this.argValue(0),
+            result = [];
+
+        for (var i = 0; i < a.length; i++) {
+          if (this.evaluator.evaluate(fn + '(' + a[i] + ')')) {
+            result.push(a[i]);
+          }
+        }
+
+        return result;
+      },
+
+      'includesA': function (a) {
+        var x = this.argValue(0);
+        for (var i = 0; i < a.length; i++) {
+          if (a[i] === x) return 1;
+        }
+        return 0;
+      },
+
+      'joinA': function (a) {
+        return a.join(this.argValue(0));
+      },
+
+      'mapA': function (a) {
+
+        var fn     = this.argValue(0),
+            result = [];
+
+        for (var i = 0; i < a.length; i++) {
+          result.push(this.evaluator.evaluate(fn + '(' + a[i] + ')'));
+        }
+        return result;
+      },
+
+      'reduceA': function (a) {
+
+        var fn  = this.argValue(0),
+            acc = this.args.length === 2 ? this.argValue(1) : a[0];
+
+        for (var i = 0; i < a.length; i++) {
+          acc = this.evaluator.evaluate(fn + '(' + acc + ',' + a[i] + ',' + i + ',' + a + ')');
+        }
+        return acc;
+      },
+
+      'sliceA': function (a) {
+        var to = this.args.length > 1 ? this.argValue(1) : 'undefined';
+        return a.slice(this.argValue(0), to);
+      },
+
+      'someA': function (a) {
+
+        var fn = this.argValue(0);
+
+        for (var i = 0; i < a.length; i++) {
+          if (this.evaluator.evaluate(fn + '(' + a[i] + ')')) {
+            return 1;
+          }
+        }
+        return 0;
+      }
+
+    });
+
+    // Array functions that don't take arguments.
+    this.defineFunctions({
+
+      'andA': function (a) {
+        for (var i = 0; i < a.length; i++) {
+          if (a[i] <= 0) return 0;
+        }
+        return 1;
+      },
+
+      'maxA': function (a) {
+        return Math.max.apply(null, a);
+      },
+
+      'meanA': function (a) {
+
+        var sum = 0;
+
+        for (var i = 0; i < a.length; i++) {
+          sum += a[i];
+        }
+        return sum / a.length;
+      },
+
+      'medianA': function (a) {
+        a = a.sort(function (a, b) {
+          return a - b;
+        });
+        var len = a.length;
+        if (len % 2 === 0) {
+          return (a[len / 2 - 1] + a[len / 2]) / 2;
+        }
+        else {
+          return (a[(len - 1) / 2]);
+        }
+      },
+
+      'minA': function (a) {
+        return Math.min.apply(null, a);
+      },
+
+      'orA': function (a) {
+        for (var i = 0; i < a.length; i++) {
+          if (a[i] > 0) return 1;
+        }
+        return 0;
+      },
+
+      'productA': function (a) {
+        var product = 1;
+        for (var i = 0; i < a.length; i++) {
+          product *= a[i];
+        }
+        return product;
+      },
+
+      'reverseA': function (a) {
+        return a.reverse();
+      },
+
+      'sumA': function (a) {
+        var sum = 0;
+        for (var i = 0; i < a.length; i++) {
+          sum += a[i];
+        }
+        return sum;
+      }
+
     }, true);
   },
 

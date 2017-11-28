@@ -50,6 +50,7 @@ describe('Parser', () => {
       assert.deepEqual(parser.parse('100'), token('number', 100));
       assert.deepEqual(parser.parse('1.23'), token('number', 1.23));
       assert.deepEqual(parser.parse('1.'), token('number', 1));
+      assert.deepEqual(parser.parse('.1'), token('number', 0.1));
     });
     it('Should create number tokens from scientific notiation', () => {
       assert.deepEqual(parser.parse('1e10'), token('number', 1e10));

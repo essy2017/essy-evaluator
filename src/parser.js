@@ -18,6 +18,7 @@ var defaultOperators = {
   '%'  : 1,
   '?'  : 1,
   ':'  : 1,
+  '.'  : 1,
   ','  : 1,
   '<'  : 1,
   '<=' : 1,
@@ -127,7 +128,8 @@ Parser.prototype.parse = function (txt) {
     }
 
     // Number. Numbers include exponentials. Numbers can start with a decimal point or digit.
-    else if (c >= '0' && c <= '9' || c === '.') {
+    // The '.' operator also can be used with arrays so don't count that as a number.
+    else if (c >= '0' && c <= '9' || (c === '.' && !(i > 0 && (txt.charAt(i-1) === ']' || txt.charAt(i-1) === ')')))) {
       str = c;
       i += 1;
 

@@ -33,7 +33,7 @@ Basic Usage
     // Use custom definitions.
     evaluator.defineName('myCustomName', 8);
     result = evaluator.evaluate('myCustomName / 4'); // 2
-    
+
     // Equivalently pass custom definitions to evaluate.
     result = evaluator.evaluate('myCustomName / 4', { myCustomName: 8 }); // 2
 
@@ -130,7 +130,7 @@ the methods section for lists of pre-defined constants, operators, and functions
 Evaluates expression `exp`, either a string or array of tokens returned from `Parser.parse()`.
 Returns result of evaluation, typically a number.
 
-If a string `exp` is provided, `evaluate()` will throw a `ParseException` if parsing 
+If a string `exp` is provided, `evaluate()` will throw a `ParseException` if parsing
 fails. See `Parser.parse()` for details.
 
 An optional `names` argument can be provided to specify custom definitions. This is a shortcut
@@ -148,17 +148,17 @@ Examples:
     var parser    = new essy.Parser();
     var evaluator = new essy.Evaluator();
     var result;
-    
+
     // Simple evaluation of string.
     result = evaluator.evaluate('1 + 2');    // 3
-    
+
     // Evaluation of tokens.
     var tokens = parser.parse('1 + 2');
     result = evaluator.evaluate(tokens);    // 3
-    
+
     // Defining names.
     result = evaluator.evaluate('1 + myConstant', { myConstant: 2 }); // 3
-    
+
 
 ##### defineFunction (name {String}, ev {Function} [, noArgs {Boolean}])
 Defines a custom function. The `name` is the name for the function and `ev` is
@@ -246,7 +246,11 @@ Operator | Example     | Description    | Returns
 
 
 #### Pre-defined Functions
-`Evaluator` defines the following functions by default:
+`Evaluator` defines the following functions by default. Functions that accept an
+arbitrary number of arguments (e.g., `and`, `max`, etc.) will also accept an
+array as a single argument.
+
+    evaluator.evaluate('and(1,2,3)') === evaluator.evaluate('and([1,2,3])');
 
 Function                | Description
 :---------------------  | :----------
@@ -282,3 +286,84 @@ sin(x)                  | Returns the sine of x.
 sqrt(x)                 | Returns the square root of x. Throws exception if x is less than or equal to 0.
 sum(x0, x1, ... xN)     | Returns the sum of provided arguments.
 tan(x)                  | Returns the tangent of x.
+
+#### Pre-defined Array Functions
+`Evaluator` includes various common functions to operate on arrays. Functions
+that return arrays can be chained.
+
+##### andA()
+Returns 1 if all elements in array are greater than 0, else returns 0.
+
+##### everyA(fn)
+Calls `fn` on every element and returns 1 if `fn` returns true in all cases.
+
+    evaluator.defineFunction('threshold', function () {
+      return this.argValue(0) < 5;
+    });
+    result = evaluator.evaluate('[1, 2, 3].everyA("threshold")');  // 1
+    result = evaluator.evaluate('[1, 2, 6].everyA("threshold")');  // 0
+
+##### filterA(fn)
+Filters elements using `fn`.
+
+    evaluator.defineFunction('myFilter', function () {
+      return this.argValue(0) < 3;
+    });
+    result = evaluator.evaluate('[1, 2, 4, 5].filterA("myFilter")');  // [1, 2]
+
+##### includesA(x)
+Returns 1 if array includes element `x`, else returns 0.
+
+##### joinA(joiner)
+Joins array elements into string using `joiner`.
+
+##### mapA(fn)
+Maps elements using `fn`.
+
+    result = evaluator.evaluate('[1, 2, 3].mapA("fac")');  // [1, 2, 6]
+
+##### maxA()
+Returns element with maximum value.
+
+##### meanA()
+Returns mean of elements.
+
+##### medianA()
+Returns median of elements.
+
+##### minA()
+Returns element with minimum value.
+
+##### orA()
+Returns 1 if any element is greater than 0.
+
+##### productA()
+Returns product of elements.
+
+##### reduceA(fn, acc)
+Reduces array using `fn`. An optional initial value for the accumulator can
+be specified as `acc`. If not provided the first element in the array will be used.
+The provided `fn` accepts four arguments:
+
+  - accumulator: Accumulated result.
+  - currentValue: Value of current array element.
+  - index: [optional] Index of current array element.
+  - array: [optional] The array `a`.
+
+    evaluator.defineFunction('summer', function () {
+      // Add accumulator and currentValue.
+      return this.argValue(0) + this.argValue(1);
+    });
+    result = evaluator.evaluate('[1, 2, 3].reduceA("summer", 0)'); // 6
+
+##### reverseA()
+Returns reversed array.
+
+##### slice(start [,end])
+Returns slice of array.
+
+##### someA(fn)
+Returns 1 if `fn` returns true for any element.
+
+##### sumA()
+Returns sum of elements.
