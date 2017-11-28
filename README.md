@@ -73,6 +73,7 @@ By default the following operators are defined:
   - '^'
   - '%'
   - '?'
+  - '.'
   - ':'
   - ','
   - '<'
@@ -294,6 +295,8 @@ that return arrays can be chained.
 ##### andA()
 Returns 1 if all elements in array are greater than 0, else returns 0.
 
+    result = evaluator.evaluate('[1, 2, 3].andA()'); // 1
+
 ##### everyA(fn)
 Calls `fn` on every element and returns 1 if `fn` returns true in all cases.
 
@@ -314,8 +317,12 @@ Filters elements using `fn`.
 ##### includesA(x)
 Returns 1 if array includes element `x`, else returns 0.
 
+    result = evaluator.evaluate('["a", "b"].includesA("a")'); // 1
+
 ##### joinA(joiner)
 Joins array elements into string using `joiner`.
+
+    result = evaluator.evaluate(["a", "b", "c"].joinA("-")); // "a-b-c"
 
 ##### mapA(fn)
 Maps elements using `fn`.
@@ -325,20 +332,32 @@ Maps elements using `fn`.
 ##### maxA()
 Returns element with maximum value.
 
+    result = evaluator.evaluate('[1, 2, 3].maxA()'); // 3
+
 ##### meanA()
 Returns mean of elements.
+
+    result = evaluator.evaluate('[1, 2, 3].meanA()'); // 2
 
 ##### medianA()
 Returns median of elements.
 
+    result = evaluator.evaluate('[1, 2, 3].medianA()'); // 2
+
 ##### minA()
 Returns element with minimum value.
+
+    result = evaluator.evaluate('[1, 3, 5].minA()'); // 1
 
 ##### orA()
 Returns 1 if any element is greater than 0.
 
+    result = evaluator.evaluate('[1, 2, 3].orA()'); // 1
+
 ##### productA()
 Returns product of elements.
+
+    result = evaluator.evaluate('[1, 2, 3].productA()'); // 6
 
 ##### reduceA(fn, acc)
 Reduces array using `fn`. An optional initial value for the accumulator can
@@ -350,6 +369,8 @@ The provided `fn` accepts four arguments:
   - index: [optional] Index of current array element.
   - array: [optional] The array `a`.
 
+Example:
+
     evaluator.defineFunction('summer', function () {
       // Add accumulator and currentValue.
       return this.argValue(0) + this.argValue(1);
@@ -359,11 +380,22 @@ The provided `fn` accepts four arguments:
 ##### reverseA()
 Returns reversed array.
 
+    result = evaluator.evaluate('[1, 2, 3].reverseA()'); // [3, 2, 1]
+
 ##### slice(start [,end])
 Returns slice of array.
+
+    result = evaluator.evaluate('[1, 2, 3, 4].slice(1, 3)'); // [2, 3]
 
 ##### someA(fn)
 Returns 1 if `fn` returns true for any element.
 
+    evaluator.defineFunction("checkSome", function () {
+      return this.argValue(0) > 3;
+    });
+    result = evaluator.evaluate('[1, 3, 5].someA("checkSome")'); // 1
+
 ##### sumA()
 Returns sum of elements.
+
+    result = evaluator.evaluate('[1, 2, 3].sumA()'); // 6
