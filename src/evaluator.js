@@ -192,9 +192,6 @@ Evaluator.prototype = {
 
         return this;
       },
-      argValue: function (i) {
-        return this.args[i].ev();
-      },
       argValues: function () {
         var values = [];
         for (var i = 0; i < this.args.length; i++) {
@@ -203,10 +200,21 @@ Evaluator.prototype = {
         return values;
       },
       argArray: function () {
-        var a = this.argValue(0);
+        var a = this.args[0].ev();
         return typeof a === 'object' ? a : this.argValues();
       },
-      ev: ev
+      ev: function (a) {
+        if (noArgs) {
+          return ev.call(this, a);
+        }
+        else {
+          var args = this.argArray();
+          if (typeof a !== 'undefined') {
+            args.unshift(a);
+          }
+          return ev.apply(this, args);
+        }
+      }
     });
   },
 
@@ -568,12 +576,12 @@ Evaluator.prototype = {
     this.defineFunctions({
 
       // Single argument functions.
-      'abs': function () {
-        return Math.abs(this.argValue(0));
+      'abs': function (x) {
+        return Math.abs(x);
+        //return Math.abs(this.argValue(0));
       },
 
-      'acos': function () {
-        var a = this.argValue(0);
+      'acos': function (a) {
         if (a < -1 || a > 1) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
@@ -584,17 +592,13 @@ Evaluator.prototype = {
       },
 
       'and': function () {
-        var args = this.argArray();
-        for (var i = 0; i < args.length; i++) {
-          if (args[i] <= 0) {
-            return 0;
-          }
+        for (var i = 0; i < arguments.length; i++) {
+          if (arguments[i] <= 0) return 0;
         }
         return 1;
       },
 
-      'asin': function () {
-        var a = this.argValue(0);
+      'asin': function (a) {
         if (a < 0 || a > 1) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
@@ -604,8 +608,7 @@ Evaluator.prototype = {
         return Math.asin(a);
       },
 
-      'atan': function () {
-        var a = this.argValue(0);
+      'atan': function (a) {
         if (a < -1 || a > 1) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
@@ -615,48 +618,47 @@ Evaluator.prototype = {
         return Math.atan(a);
       },
 
-      'ceiling': function () {
-        return Math.ceil(this.argValue(0));
+      'ceiling': function (x) {
+        return Math.ceil(x);
       },
 
       'choose': function () {
-        var i = this.argValue(0);
-        if (i < 1 || i > this.args.length) {
+        var i = arguments[0];
+        if (i < 1 || i > arguments.length) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
             'At "choose(' + i + ',...)": the index is out of bounds.'
           );
         }
-        return this.argValue(i);
+        return arguments[i];
       },
 
-      'cos': function () {
-        return Math.cos(this.argValue(0));
+      'cos': function (x) {
+        return Math.cos(x);
       },
 
-      'exp': function () {
-        return Math.exp(this.argValue(0));
+      'exp': function (x) {
+        return Math.exp(x);
       },
 
-      'fac': function () {
+      'fac': function (f) {
         function fac (x) {
           if (x < 0) return -1;
           if (x === 0) return 1;
           return x * fac(x - 1);
         }
-        return fac(this.argValue(0));
+        return fac(f);
       },
 
-      'floor': function () {
-        return Math.floor(this.argValue(0));
+      'floor': function (x) {
+        return Math.floor(x);
       },
 
-      'if': function () {
-        return this.argValue(0) > 0 ? this.argValue(1) : this.argValue(2);
+      'if': function (x, y, z) {
+        return x > 0 ? y : z;
       },
 
-      'log': function () {
-        var a = this.argValue(0);
+      'log': function (a) {
         if (a <= 0) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
@@ -666,8 +668,7 @@ Evaluator.prototype = {
         return Math.log(10) / Math.log(a);
       },
 
-      'ln': function () {
-        var a = this.argValue(0);
+      'ln': function (a) {
         if (a <= 0) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
@@ -678,106 +679,102 @@ Evaluator.prototype = {
       },
 
       'max': function () {
-        return Math.max.apply(null, this.argArray());
+        return Math.max.apply(null, arguments);
       },
 
       'mean': function () {
 
-        var sum    = 0,
-            values = this.argArray();
+        var sum = 0;
 
-        for (var i = 0; i < values.length; i++) {
-          sum += values[i];
+        for (var i = 0; i < arguments.length; i++) {
+          sum += arguments[i];
         }
-        return sum / values.length;
+        return sum / arguments.length;
       },
 
       'median': function () {
-        var values = this.argArray().sort(function (a, b) {
+        var values = [],
+            len    = arguments.length;
+        for (var i = 0; i < len; i++) {
+          values.push(arguments[i]);
+        }
+        values = this.argArray().sort(function (a, b) {
           return a - b;
         });
-        if (values.length % 2 === 0) {
-          return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
+        if (len % 2 === 0) {
+          return (values[len / 2 - 1] + values[len / 2]) / 2;
         }
         else {
-          return (values[(values.length - 1) / 2]);
+          return (values[(len - 1) / 2]);
         }
       },
 
       'min': function () {
-        return Math.min.apply(null, this.argArray());
+        return Math.min.apply(null, arguments);
       },
 
-      'mod': function () {
-        var a = this.argValue(1);
-        if (a === 0) {
+      'mod': function (x, y) {
+        if (y === 0) {
           throw new EvaluateException(
             EvaluateException.TYPE_DIVIDE_BY_ZERO,
-            'At "mod(' + a + ')": cannot divide by 0.'
+            'At "mod(' + y + ')": cannot divide by 0.'
           );
         }
-        return this.argValue(0) % a;
+        return x % y;
       },
 
-      'not': function () {
-        return this.argValue(0) > 0 ? 0 : 1;
+      'not': function (x) {
+        return x > 0 ? 0 : 1;
       },
 
       'or': function () {
-        var args = this.argArray();
-        for (var i = 0, n = args.length; i < n; i++) {
-          if (args[i] > 0) {
+        for (var i = 0, n = arguments.length; i < n; i++) {
+          if (arguments[i] > 0) {
             return 1;
           }
         }
         return 0;
       },
 
-      'pow': function () {
-        return Math.pow(this.argValue(0), this.argValue(1));
+      'pow': function (x, y) {
+        return Math.pow(x, y);
       },
 
       'product': function () {
-        var product = 1,
-            values  = this.argArray();
-        for (var i = 0; i < values.length; i++) {
-          product *= values[i];
+        var product = 1;
+        for (var i = 0, n = arguments.length; i < n; i++) {
+          product *= arguments[i];
         }
         return product;
       },
 
-      'quotient': function () {
-        var div = this.argValue(0);
-        var den = this.argValue(1);
-        if (den === 0) {
+      'quotient': function (x, y) {
+        if (y === 0) {
           throw new EvaluateException(
             EvaluateException.TYPE_DIVIDE_BY_ZERO,
-            'At "quotient(' + div + ', ' + den + ')": cannot divide by 0.'
+            'At "quotient(' + x + ', ' + y + ')": cannot divide by 0.'
           );
         }
-        return Math.floor(div / den);
+        return Math.floor(x / y);
       },
 
-      'randInt': function () {
-        var a = this.argValue(0);
-        return a + parseInt(Math.random() * (this.argValue(1) - a));
+      'randInt': function (a, b) {
+        return a + parseInt(Math.random() * (b - a));
       },
 
-      'randRange': function () {
-        var a = this.argValue(0);
-        return a + Math.random() * (this.argValue(1) - a);
+      'randRange': function (a, b) {
+        return a + Math.random() * (b - a);
       },
 
-      'round': function () {
-        return Math.round(this.argValue(0));
+      'round': function (x) {
+        return Math.round(x);
       },
 
-      'sin': function () {
-        return Math.sin(this.argValue(0));
+      'sin': function (x) {
+        return Math.sin(x);
       },
 
-      'sqrt': function () {
-        var a = this.argValue(0);
+      'sqrt': function (a) {
         if (a <= 0) {
           throw new EvaluateException(
             EvaluateException.TYPE_ARGUMENT_RANGE,
@@ -789,17 +786,16 @@ Evaluator.prototype = {
 
       'sum': function () {
 
-        var sum    = 0,
-            values = this.argArray();
+        var sum = 0;
 
-        for (var i = 0; i < values.length; i++) {
-          sum += values[i];
+        for (var i = 0, n = arguments.length; i < n; i++) {
+          sum += arguments[i];
         }
         return sum;
       },
 
-      'tan': function () {
-        return Math.tan(this.argValue(0));
+      'tan': function (x) {
+        return Math.tan(x);
       }
 
     });
@@ -813,75 +809,56 @@ Evaluator.prototype = {
     // Define array functions.
     this.defineFunctions({
 
-      'everyA': function (a) {
-
-        var fn     = this.argValue(0),
-            result = true;
-
+      'everyA': function (a, fn) {
+        var result = true;
         for (var i = 0; i < a.length; i++) {
           result = result && this.evaluator.evaluate(fn + '(' + a[i] + ')');
         }
         return result ? 1 : 0;
-
       },
 
-      'filterA': function (a) {
-
-        var fn     = this.argValue(0),
-            result = [];
-
+      'filterA': function (a, fn) {
+        var result = [];
         for (var i = 0; i < a.length; i++) {
           if (this.evaluator.evaluate(fn + '(' + a[i] + ')')) {
             result.push(a[i]);
           }
         }
-
         return result;
       },
 
-      'includesA': function (a) {
-        var x = this.argValue(0);
+      'includesA': function (a, x) {
         for (var i = 0; i < a.length; i++) {
           if (a[i] === x) return 1;
         }
         return 0;
       },
 
-      'joinA': function (a) {
-        return a.join(this.argValue(0));
+      'joinA': function (a, joiner) {
+        return a.join(joiner);
       },
 
-      'mapA': function (a) {
-
-        var fn     = this.argValue(0),
-            result = [];
-
+      'mapA': function (a, fn) {
+        var result = [];
         for (var i = 0; i < a.length; i++) {
           result.push(this.evaluator.evaluate(fn + '(' + a[i] + ')'));
         }
         return result;
       },
 
-      'reduceA': function (a) {
-
-        var fn  = this.argValue(0),
-            acc = this.args.length === 2 ? this.argValue(1) : a[0];
-
+      'reduceA': function (a, fn, acc) {
+        acc = typeof acc === 'undefined' ? a[0] : acc;
         for (var i = 0; i < a.length; i++) {
           acc = this.evaluator.evaluate(fn + '(' + acc + ',' + a[i] + ',' + i + ',' + a + ')');
         }
         return acc;
       },
 
-      'sliceA': function (a) {
-        var to = this.args.length > 1 ? this.argValue(1) : 'undefined';
-        return a.slice(this.argValue(0), to);
+      'sliceA': function (a, start, end) {
+        return a.slice(start, end);
       },
 
-      'someA': function (a) {
-
-        var fn = this.argValue(0);
-
+      'someA': function (a, fn) {
         for (var i = 0; i < a.length; i++) {
           if (this.evaluator.evaluate(fn + '(' + a[i] + ')')) {
             return 1;
@@ -907,9 +884,7 @@ Evaluator.prototype = {
       },
 
       'meanA': function (a) {
-
         var sum = 0;
-
         for (var i = 0; i < a.length; i++) {
           sum += a[i];
         }

@@ -88,21 +88,8 @@ By default the following operators are defined:
 
 #### parse (expression {String})
 Parses an expression into tokens. `parse()` returns an array of simple token objects,
-each with properties `type {String}` and `value {Any}`. The token type can be one of the
-following:  
-
-  - __name__ All strings not enclosed in quotes are converted to name tokens. The value is
-    equal to the name.
-  - __number__ Numbers represented in decimal or scientific notiation.
-  - __operator__ Any operator defined in the operator list.
-  - __string__ Any string encapsulated in quotes.
-
-`parse()` will throw a `ParseException` in the following cases:
-
-  - Invalid number
-  - Invalid trailing operator
-  - Unrecognized operator
-  - Unterminated string
+each with properties `type {String}` and `value {Any}`. Throws a `ParseException`
+on invalid expression.
 
 #### updateOperators (operators {Object})
 Updates valid operator list. Keys should be the operator (e.g., '+') and values indicate
@@ -130,9 +117,6 @@ the methods section for lists of pre-defined constants, operators, and functions
 ##### evaluate (exp {String|Object[]} [, names {Object}])
 Evaluates expression `exp`, either a string or array of tokens returned from `Parser.parse()`.
 Returns result of evaluation, typically a number.
-
-If a string `exp` is provided, `evaluate()` will throw a `ParseException` if parsing
-fails. See `Parser.parse()` for details.
 
 An optional `names` argument can be provided to specify custom definitions. This is a shortcut
 to calling `Evaluator.defineName()`.
@@ -169,15 +153,11 @@ not accept any arguments; by default this value is false.
     var essy      = require('essy-evaluator');
     var evaluator = new essy.Evaluator();
 
-    evaluator.defineFunction('addTwoNumbers', function () {
-      return this.argValue(0) + this.argValue(1);
+    evaluator.defineFunction('addTwoNumbers', function (a, b) {
+      return a + b;
     });
 
     var result = evaluator.evaluate('addTwoNumbers(2, 3)'); // 5
-
-As seen above, the `ev` function has access to provided argument values
-via the `argValue()` method, which accepts an argument index. In the above,
-`argValue(0) === 2` and `argValue(1) === 3`.
 
 You can also define functions that accept an arbitrary number of arguments:
 
@@ -186,20 +166,20 @@ You can also define functions that accept an arbitrary number of arguments:
 
     evaluator.defineFunction('addNumbers', function () {
 
-      var sum    = 0,
-          values = this.argValues();
+      var sum = 0;
 
-      for (var i = 0; i < values.length; i++) {
-        sum += values[i];
+      for (var i = 0; i < arguments.length; i++) {
+        sum += arguments[i];
       }
 
-      return values;
+      return sum;
     });
 
-    var result = evaluator.evaluate('addNumbers(1,2,3,4)'); // 10
+    var result = evaluator.evaluate('addNumbers(1, 2, 3, 4)'); // 10
 
-The above makes use of the `argValues()` method, which evaluates and returns all
-argument values.
+    // An array as a first argument is applied to the function.
+    result = evaluator.evaluate('addNumbers([1, 2, 3, 4])'); // 10
+
 
 ##### defineName (name {String}, value {Any})
 Defines a custom name. This can be useful if you want to define custom constant
@@ -300,8 +280,8 @@ Returns 1 if all elements in array are greater than 0, else returns 0.
 ##### everyA(fn)
 Calls `fn` on every element and returns 1 if `fn` returns true in all cases.
 
-    evaluator.defineFunction('threshold', function () {
-      return this.argValue(0) < 5;
+    evaluator.defineFunction('threshold', function (x) {
+      return x < 5;
     });
     result = evaluator.evaluate('[1, 2, 3].everyA("threshold")');  // 1
     result = evaluator.evaluate('[1, 2, 6].everyA("threshold")');  // 0
@@ -309,8 +289,8 @@ Calls `fn` on every element and returns 1 if `fn` returns true in all cases.
 ##### filterA(fn)
 Filters elements using `fn`.
 
-    evaluator.defineFunction('myFilter', function () {
-      return this.argValue(0) < 3;
+    evaluator.defineFunction('myFilter', function (x) {
+      return x < 3;
     });
     result = evaluator.evaluate('[1, 2, 4, 5].filterA("myFilter")');  // [1, 2]
 
@@ -371,9 +351,8 @@ The provided `fn` accepts four arguments:
 
 Example:
 
-    evaluator.defineFunction('summer', function () {
-      // Add accumulator and currentValue.
-      return this.argValue(0) + this.argValue(1);
+    evaluator.defineFunction('summer', function (accumulator, currentValue, index, array) {
+      return accumulator + currentValue;
     });
     result = evaluator.evaluate('[1, 2, 3].reduceA("summer", 0)'); // 6
 
@@ -390,8 +369,8 @@ Returns slice of array.
 ##### someA(fn)
 Returns 1 if `fn` returns true for any element.
 
-    evaluator.defineFunction("checkSome", function () {
-      return this.argValue(0) > 3;
+    evaluator.defineFunction("checkSome", function (x) {
+      return x > 3;
     });
     result = evaluator.evaluate('[1, 3, 5].someA("checkSome")'); // 1
 
