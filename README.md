@@ -382,10 +382,10 @@ Returns reversed array.
 
     result = evaluator.evaluate('[1, 2, 3].reverseA()'); // [3, 2, 1]
 
-##### slice(start [,end])
+##### sliceA(start [,end])
 Returns slice of array.
 
-    result = evaluator.evaluate('[1, 2, 3, 4].slice(1, 3)'); // [2, 3]
+    result = evaluator.evaluate('[1, 2, 3, 4].sliceA(1, 3)'); // [2, 3]
 
 ##### someA(fn)
 Returns 1 if `fn` returns true for any element.
