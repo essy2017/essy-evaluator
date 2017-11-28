@@ -243,5 +243,15 @@ describe('Evaluator', () => {
       assert.strictEqual(evaluator.evaluate(parser.parse('#10')), 100);
     });
   });
+  
+  
+  describe('Strings', () => {
+    it('Should recognize strings', () => {
+      evaluator.defineFunction('stringer', function () {
+        return 'a_' + this.argValue(0);
+      });
+      assert.strictEqual(evaluator.evaluate('stringer("myString")'), 'a_myString');
+    });
+  });
 
 });

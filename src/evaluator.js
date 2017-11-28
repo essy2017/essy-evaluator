@@ -49,6 +49,14 @@ function Symbol (id, props) {
   return extend(o, props);
 }
 
+
+/*****************************************************************
+ *
+ * Evaluates expressions.
+ * @class Evaluator 
+ * @constructor  
+ *
+ ****************************************************************/
 export function Evaluator () {
   this.symbolTable = {};
   this.tokenIndex = 0;
@@ -87,17 +95,17 @@ Evaluator.prototype = {
     t = this.tokenSet[this.tokenIndex];
     this.tokenIndex += 1;
 
-    if (typeof t === 'number') {
+    if (t.type === 'number' || t.type === 'string') {
       o = this.symbolTable[LITERAL_TOKEN_ID];
       this.activeSymbol = Object.create(o);
-      this.activeSymbol.value = t;
+      this.activeSymbol.value = t.value;
     }
     else {
-      o = this.symbolTable[t];
+      o = this.symbolTable[t.value];
       if (!o) {
         throw new EvaluateException(
           EvaluateException.TYPE_UNDEFINED_SYMBOL,
-          'The symbol "' + t + '" is not defined.'
+          'The symbol "' + t.value + '" is not defined.'
         );
       }
       this.activeSymbol = Object.create(o);
@@ -114,21 +122,16 @@ Evaluator.prototype = {
   */
   evaluate: function (exp, names) {
 
-    var tokens = [];
-    
     if (typeof exp === 'string') {
       var parser = new Parser();
       exp = parser.parse(exp);
-    }
-    for (var i = 0; i < exp.length; i++) {
-      tokens.push(exp[i].value);
     }
     
     if (names) {
       this.defineNames(names);
     }
 
-    this.tokenSet = tokens;
+    this.tokenSet = exp;
     this.tokenIndex = 0;
     this.activeSymbol = 0;
     this.advance();
