@@ -83,6 +83,8 @@ describe('Evaluator', () => {
     it('and()', () => {
       assert.strictEqual(evaluator.evaluate('and(1,2,3)'), 1);
       assert.strictEqual(evaluator.evaluate('and(1,-2,3)'), 0);
+      assert.strictEqual(evaluator.evaluate('and([1,2,3])'), 1);
+      assert.strictEqual(evaluator.evaluate('and([1,2,-3])'), 0);
     });
     it('asin()', () => {
       assert.strictEqual(evaluator.evaluate('asin(0.5)'), Math.asin(0.5));
@@ -124,18 +126,29 @@ describe('Evaluator', () => {
       assert.strictEqual(evaluator.evaluate('ln(3)'), Math.log(3));
       assert.throws(() => { evaluator.evaluate('ln(-1.5)'); }, EvaluateException);
     });
+    it('map()', () => {
+      evaluator.defineFunction('mapper', function () {
+        return 2 * this.argValue(0);
+      });
+      assert.deepEqual(evaluator.evaluate('map([1,2,3], "mapper")'), [2, 4, 6]);
+    });
     it('max()', () => {
       assert.strictEqual(evaluator.evaluate('max(1,21,3)'), 21);
+      assert.strictEqual(evaluator.evaluate('max([1,21,3])'), 21);
     });
     it('mean()', () => {
       assert.strictEqual(evaluator.evaluate('mean(1,2,3)'), 2);
+      assert.strictEqual(evaluator.evaluate('mean([1,2,3])'), 2);
     });
     it('median()', () => {
       assert.strictEqual(evaluator.evaluate('median(1, 2, 3)'), 2);
       assert.strictEqual(evaluator.evaluate('median(1, 2, 3, 4)'), 2.5);
+      assert.strictEqual(evaluator.evaluate('median([1, 2, 3])'), 2);
+      assert.strictEqual(evaluator.evaluate('median([1, 2, 3, 4])'), 2.5);
     });
     it('min()', () => {
       assert.strictEqual(evaluator.evaluate('min(11,2,3)'), 2);
+      assert.strictEqual(evaluator.evaluate('min([11,2,3])'), 2);
     });
     it('mod()', () => {
       assert.strictEqual(evaluator.evaluate('mod(5,2)'), 5 % 2);
@@ -148,12 +161,15 @@ describe('Evaluator', () => {
     it('or()', () => {
       assert.strictEqual(evaluator.evaluate('or(1,0,3)'), 1);
       assert.strictEqual(evaluator.evaluate('or(-1,0,-3)'), 0);
+      assert.strictEqual(evaluator.evaluate('or([1,0,3])'), 1);
+      assert.strictEqual(evaluator.evaluate('or([-1,0,-3])'), 0);
     });
     it('pow()', () => {
       assert.strictEqual(evaluator.evaluate('pow(3,6)'), Math.pow(3, 6));
     });
     it('product()', () => {
       assert.strictEqual(evaluator.evaluate('product(1,2,3)'), 6);
+      assert.strictEqual(evaluator.evaluate('product([1,2,3])'), 6);
     });
     it('quotient()', () => {
       assert.strictEqual(evaluator.evaluate('quotient(4,3)'), Math.floor(4 / 3));
@@ -182,6 +198,7 @@ describe('Evaluator', () => {
     });
     it('sum()', () => {
       assert.strictEqual(evaluator.evaluate('sum(1,2,3)'), 6);
+      assert.strictEqual(evaluator.evaluate('sum([1,2,3])'), 6);
     });
     it('tan()', () => {
       assert.strictEqual(evaluator.evaluate('tan(9)'), Math.tan(9));
@@ -243,14 +260,28 @@ describe('Evaluator', () => {
       assert.strictEqual(evaluator.evaluate(parser.parse('#10')), 100);
     });
   });
-  
-  
+
+
   describe('Strings', () => {
     it('Should recognize strings', () => {
       evaluator.defineFunction('stringer', function () {
         return 'a_' + this.argValue(0);
       });
       assert.strictEqual(evaluator.evaluate('stringer("myString")'), 'a_myString');
+    });
+  });
+
+  describe('Arrays', () => {
+    it('Should recognize arrays', () => {
+      evaluator.defineFunction('summer', function () {
+        var a = this.argValue(0);
+        var sum = 0;
+        for (var i = 0; i < a.length; i++) {
+          sum += a[i];
+        }
+        return sum;
+      });
+      assert.strictEqual(evaluator.evaluate('summer([1,4/2,3])'), 6);
     });
   });
 

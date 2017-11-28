@@ -4,7 +4,6 @@ import { Parser } from './parser';
 var END_TOKEN_ID     = '(end)',
     LITERAL_TOKEN_ID = '(literal)';
 
-
 /**
  * Simple single-depth extend utility function.
  * @method extend
@@ -53,8 +52,8 @@ function Symbol (id, props) {
 /*****************************************************************
  *
  * Evaluates expressions.
- * @class Evaluator 
- * @constructor  
+ * @class Evaluator
+ * @constructor
  *
  ****************************************************************/
 export function Evaluator () {
@@ -126,7 +125,7 @@ Evaluator.prototype = {
       var parser = new Parser();
       exp = parser.parse(exp);
     }
-    
+
     if (names) {
       this.defineNames(names);
     }
@@ -200,6 +199,10 @@ Evaluator.prototype = {
           values.push(this.args[i].ev());
         }
         return values;
+      },
+      argArray: function () {
+        var a = this.argValue(0);
+        return typeof a === 'object' ? a : this.argValues();
       }
     }, { ev: ev }));
   },
@@ -390,9 +393,23 @@ Evaluator.prototype = {
 
       '[': {
         nud: function () {
-         var s = this.evaluator.expression(0);
-         this.evaluator.advance(']');
-         return s;
+          this.elements = [];
+          while (1) {
+            this.elements.push(this.evaluator.expression(0));
+            if (this.evaluator.activeSymbol.id !== ',') {
+              break;
+            }
+            this.evaluator.advance(',');
+          }
+          this.evaluator.advance(']');
+          return this;
+        },
+        ev: function () {
+          var a = [];
+          for (var i = 0; i < this.elements.length; i++) {
+            a.push(this.elements[i].ev());
+          }
+          return a;
         }
       },
 
@@ -553,8 +570,9 @@ Evaluator.prototype = {
       },
 
       'and': function () {
-        for (var i = 0; i < this.args.length; i++) {
-          if (this.argValue(i) <= 0) {
+        var args = this.argArray();
+        for (var i = 0; i < args.length; i++) {
+          if (args[i] <= 0) {
             return 0;
           }
         }
@@ -605,7 +623,7 @@ Evaluator.prototype = {
       'exp': function () {
         return Math.exp(this.argValue(0));
       },
-      
+
       'fac': function () {
         function fac (x) {
           if (x < 0) return -1;
@@ -645,14 +663,27 @@ Evaluator.prototype = {
         return Math.log(a);
       },
 
+      'map': function () {
+
+        var a      = this.argValue(0),
+            func   = this.argValue(1),
+            result = [];
+
+        for (var i = 0; i < a.length; i++) {
+          result.push(this.evaluator.evaluate(func + '(' + a[i] + ')'));
+        }
+
+        return result;
+      },
+
       'max': function () {
-        return Math.max.apply(null, this.argValues());
+        return Math.max.apply(null, this.argArray());
       },
 
       'mean': function () {
 
         var sum    = 0,
-            values = this.argValues();
+            values = this.argArray();
 
         for (var i = 0; i < values.length; i++) {
           sum += values[i];
@@ -661,7 +692,7 @@ Evaluator.prototype = {
       },
 
       'median': function () {
-        var values = this.argValues().sort(function (a, b) {
+        var values = this.argArray().sort(function (a, b) {
           return a - b;
         });
         if (values.length % 2 === 0) {
@@ -673,7 +704,7 @@ Evaluator.prototype = {
       },
 
       'min': function () {
-        return Math.min.apply(null, this.argValues());
+        return Math.min.apply(null, this.argArray());
       },
 
       'mod': function () {
@@ -692,8 +723,9 @@ Evaluator.prototype = {
       },
 
       'or': function () {
-        for (var i = 0, n = this.args.length; i < n; i++) {
-          if (this.argValue(i) > 0) {
+        var args = this.argArray();
+        for (var i = 0, n = args.length; i < n; i++) {
+          if (args[i] > 0) {
             return 1;
           }
         }
@@ -706,7 +738,7 @@ Evaluator.prototype = {
 
       'product': function () {
         var product = 1,
-            values  = this.argValues();
+            values  = this.argArray();
         for (var i = 0; i < values.length; i++) {
           product *= values[i];
         }
@@ -757,7 +789,7 @@ Evaluator.prototype = {
       'sum': function () {
 
         var sum    = 0,
-            values = this.argValues();
+            values = this.argArray();
 
         for (var i = 0; i < values.length; i++) {
           sum += values[i];
